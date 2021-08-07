@@ -3,9 +3,12 @@ package service
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.SendMessageRequest
+import kotlinx.coroutines.CoroutineScope
+import model.Queue
+import kotlin.coroutines.CoroutineContext
 
 
-class GenericProducerService(
+class GenericProducerService (
     private val connectionService: ConnectionService
 ) {
     fun send(queueUrl: String, message: String, delay: Int) {
@@ -18,11 +21,21 @@ class GenericProducerService(
         connectionService.sqs.sendMessage(sendMessageRequest)
     }
 
-    fun getQueues(): MutableList<String>? {
-        return connectionService.sqs.listQueues().queueUrls
+    fun getQueues(): MutableList<Queue> {
+        val queueResponse: MutableList<Queue> = mutableListOf()
+        connectionService.sqs.listQueues().queueUrls.forEach {
+            queueResponse.add(
+                Queue(
+                    name = it.substringAfterLast("/"),
+                    url = it
+                )
+            )
+        }
+        return queueResponse
     }
 
-    fun receive(queueUrl: String){
+    fun receive(queueUrl: String): MutableList<String> {
+        val queueResponse: MutableList<String> = mutableListOf()
         val receiveMessageRequest = ReceiveMessageRequest(queueUrl)
             .withWaitTimeSeconds(10)
             .withMaxNumberOfMessages(10)
@@ -30,7 +43,9 @@ class GenericProducerService(
         val sqsMessages: MutableList<Message>? = connectionService.sqs.receiveMessage(receiveMessageRequest).messages
 
         sqsMessages?.forEach {
-            println(it)
+            queueResponse.add(it.toString())
         }
+        return queueResponse
     }
+
 }

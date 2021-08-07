@@ -8,13 +8,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.IntSize
 import components.mainView
 import service.ConnectionService
 import service.GenericProducerService
+const val DEFAULT_WIDTH = 1290
+const val DEFAULT_HEIGHT = 930
 
-fun main() = Window {
-
-
+fun main() = Window(
+    title = "SR SQS",
+    size = IntSize(DEFAULT_WIDTH, DEFAULT_HEIGHT),
+    resizable = false
+) {
     MaterialTheme {
         Row {
 
