@@ -6,12 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -24,7 +23,8 @@ import androidx.compose.ui.unit.sp
 import model.Queue
 
 @Composable
-fun defaultTextField (
+fun defaultTextField(
+    modifier: Modifier = Modifier,
     text: String,
     value: String,
     onValueChange: (String) -> Unit
@@ -43,8 +43,8 @@ fun defaultTextField (
             singleLine = true,
             onValueChange = onValueChange,
             decorationBox = { innerTextField ->
-                Column (
-                    Modifier
+                Column(
+                    modifier
                         .fillMaxWidth()
                         .border(0.5.dp, color = Color.Gray, shape = RoundedCornerShape(5.dp))
                         .height(30.dp)
@@ -58,19 +58,12 @@ fun defaultTextField (
 }
 
 @Composable
-fun defaultDropBox (
+fun defaultTextEditor(
+    modifier: Modifier = Modifier,
     text: String,
     value: String,
-    queueValue: List<Queue>,
-    onValueChange: (String) -> Unit,
-    onClickDropBox: () -> Unit
+    onValueChange: (String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val icon = if (expanded)
-        Icons.Filled.KeyboardArrowUp
-    else
-        Icons.Filled.KeyboardArrowDown
-
     Column(
         modifier = Modifier.padding(top = 10.dp)
     ) {
@@ -82,30 +75,19 @@ fun defaultDropBox (
         )
         BasicTextField(
             value = value,
-            singleLine = true,
+            singleLine = false,
             onValueChange = onValueChange,
             decorationBox = { innerTextField ->
-                Column (
-                    Modifier
+                Column(
+                    modifier
                         .fillMaxWidth()
                         .border(0.5.dp, color = Color.Gray, shape = RoundedCornerShape(5.dp))
                         .height(30.dp)
                         .padding(5.dp)
                 ) {
-                    Icon(icon, "contentDescription", Modifier.clickable { expanded = !expanded })
                     innerTextField()
                 }
             }
         )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            queueValue.forEach { queueName ->
-                DropdownMenuItem(onClick = onClickDropBox) {
-                    Text(text = queueName.name)
-                }
-            }
-        }
     }
 }

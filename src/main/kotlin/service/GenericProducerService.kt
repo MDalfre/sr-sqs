@@ -34,16 +34,16 @@ class GenericProducerService (
         return queueResponse
     }
 
-    fun receive(queueUrl: String): MutableList<String> {
-        val queueResponse: MutableList<String> = mutableListOf()
+    fun receive(queueUrl: String): MutableList<Message> {
+        val queueResponse: MutableList<Message> = mutableListOf()
         val receiveMessageRequest = ReceiveMessageRequest(queueUrl)
-            .withWaitTimeSeconds(10)
+            .withWaitTimeSeconds(1)
             .withMaxNumberOfMessages(10)
 
         val sqsMessages: MutableList<Message>? = connectionService.sqs.receiveMessage(receiveMessageRequest).messages
 
         sqsMessages?.forEach {
-            queueResponse.add(it.toString())
+            queueResponse.add(it)
         }
         return queueResponse
     }

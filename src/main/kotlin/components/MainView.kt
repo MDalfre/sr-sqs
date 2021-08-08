@@ -1,22 +1,25 @@
 package components
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.amazonaws.services.sqs.model.Message
 import model.Queue
 import service.ConnectionService
 import service.GenericProducerService
@@ -31,7 +34,13 @@ fun mainView() {
 
     var expandedToSend by remember { mutableStateOf(false) }
     var expandedToReceive by remember { mutableStateOf(false) }
-    val icon = if (expandedToSend)
+
+    val iconOne = if (expandedToSend)
+        Icons.Filled.KeyboardArrowUp
+    else
+        Icons.Filled.KeyboardArrowDown
+
+    val iconTwo = if (expandedToReceive)
         Icons.Filled.KeyboardArrowUp
     else
         Icons.Filled.KeyboardArrowDown
@@ -43,7 +52,8 @@ fun mainView() {
 
     var connecting by remember { mutableStateOf(false) }
     var queues by remember { mutableStateOf(listOf<Queue>()) }
-    var receivedMessages by mutableStateOf(listOf<String>())
+    var receivedMessages by remember { mutableStateOf(listOf<Message>()) }
+    val listState = rememberLazyListState()
     var serverUrl by remember { mutableStateOf("http://localhost:4566") }
     var accessKey by remember { mutableStateOf("docker") }
     var secretKey by remember { mutableStateOf("docker") }
@@ -94,7 +104,7 @@ fun mainView() {
 
     }
     Column(
-        modifier = Modifier.width(500.dp)
+        modifier = Modifier.width(450.dp)
     ) {
         Row {
             OutlinedTextField(
@@ -104,11 +114,11 @@ fun mainView() {
                 label = { Text("Queues") },
                 textStyle = TextStyle(fontSize = 13.sp),
                 trailingIcon = {
-                    Icon(icon, "contentDescription", Modifier.clickable { expandedToSend = !expandedToSend })
+                    Icon(iconOne, "contentDescription", Modifier.clickable { expandedToSend = !expandedToSend })
                 }
             )
             DropdownMenu(
-                modifier = Modifier.width(500.dp),
+                modifier = Modifier.width(450.dp),
                 expanded = expandedToSend,
                 onDismissRequest = { expandedToSend = false },
             ) {
@@ -118,17 +128,16 @@ fun mainView() {
                         selectedUrlToSend = queueName.url
                         expandedToSend = !expandedToSend
                     }) {
-                        Text(text = queueName.name)
+                        Text(text = queueName.name, style = TextStyle(fontSize = 13.sp))
                     }
                 }
             }
         }
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth().height(600.dp)
-                .padding(bottom = 16.dp),
+        defaultTextEditor(
+            modifier = Modifier.height(580.dp),
+            text = "Send Message",
             value = message,
             onValueChange = { message = it },
-            label = { Text("Send Message") }
         )
         Row(
             Modifier,
@@ -137,18 +146,21 @@ fun mainView() {
             Button(
                 modifier = buttonModifier.padding(bottom = 16.dp),
                 onClick = {
-                    GenericProducerService(connectionService!!).send(
-                        selectedUrlToSend,
-                        message,
-                        1
-                    )
-                }) {
+                    Thread {
+                        GenericProducerService(connectionService!!).send(
+                            selectedUrlToSend,
+                            message,
+                            1
+                        )
+                    }.start()
+                }
+            ) {
                 Text("Send Message")
             }
         }
     }
     Column(
-        modifier = Modifier.width(500.dp)
+        modifier = Modifier.width(450.dp).padding(start = 16.dp, bottom = 16.dp)
     ) {
         Row {
             OutlinedTextField(
@@ -158,11 +170,11 @@ fun mainView() {
                 label = { Text("Queues") },
                 textStyle = TextStyle(fontSize = 13.sp),
                 trailingIcon = {
-                    Icon(icon, "contentDescription", Modifier.clickable { expandedToReceive = !expandedToReceive })
+                    Icon(iconTwo, "contentDescription", Modifier.clickable { expandedToReceive = !expandedToReceive })
                 }
             )
             DropdownMenu(
-                modifier = Modifier.width(500.dp),
+                modifier = Modifier.width(450.dp),
                 expanded = expandedToReceive,
                 onDismissRequest = { expandedToReceive = false },
             ) {
@@ -172,25 +184,52 @@ fun mainView() {
                         selectedUrlToReceive = queueName.url
                         expandedToReceive = !expandedToReceive
                     }) {
-                        Text(text = queueName.name)
+                        Text(text = queueName.name, style = TextStyle(fontSize = 13.sp))
                     }
                 }
             }
         }
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth().height(600.dp)
-                .padding(bottom = 16.dp),
+        /** STARTS HERE **/
+        Column(
+            modifier = Modifier.padding(top = 10.dp)
         ) {
-            items(receivedMessages) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(start = 26.dp, end = 5.dp, top = 5.dp, bottom = 5.dp),
-                    elevation = 10.dp
-                ) {
-                    Text(it)
+            Text(
+                text = "Received Messages",
+                modifier = Modifier.padding(start = 3.dp),
+                style = TextStyle(fontSize = 13.sp),
+                color = Color.Gray
+            )
+            LazyColumn(
+                Modifier
+                    .fillMaxWidth()
+                    .height(580.dp)
+                    .border(0.5.dp, color = Color.Gray, shape = RoundedCornerShape(5.dp))
+                    .height(30.dp),
+                state = listState,
+            ) {
+                items(receivedMessages) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
+                            .clickable {
+
+                            },
+                        elevation = 10.dp
+                    ) {
+                        Column {
+                            Text("MessageId: ${it.messageId}")
+                            CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+                                Text(it.body, style = MaterialTheme.typography.body2)
+                            }
+                        }
+                    }
                 }
             }
+
+
         }
+        /** ENDS HERE **/
         Row(
             Modifier
                 .fillMaxSize(),
@@ -199,8 +238,13 @@ fun mainView() {
             Button(
                 modifier = buttonModifier,
                 onClick = {
-                    receivedMessages = receivedMessages.plus(GenericProducerService(connectionService!!).receive(selectedUrlToReceive).map { it })
-                }) {
+                    Thread {
+                        receivedMessages = receivedMessages.plus(
+                            GenericProducerService(connectionService!!).receive(selectedUrlToReceive)
+                        )
+                    }.start()
+                }
+            ) {
                 Text("Receive Messages")
             }
         }

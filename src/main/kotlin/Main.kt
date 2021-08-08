@@ -12,8 +12,8 @@ import androidx.compose.ui.unit.IntSize
 import components.mainView
 import service.ConnectionService
 import service.GenericProducerService
-const val DEFAULT_WIDTH = 1290
-const val DEFAULT_HEIGHT = 930
+const val DEFAULT_WIDTH = 1280
+const val DEFAULT_HEIGHT = 800
 
 fun main() = Window(
     title = "SR SQS",
