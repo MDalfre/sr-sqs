@@ -1,15 +1,15 @@
 package service
 
+import com.amazonaws.SdkClientException
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.SendMessageRequest
-import kotlinx.coroutines.CoroutineScope
 import model.Queue
-import kotlin.coroutines.CoroutineContext
 
 
-class GenericProducerService (
-    private val connectionService: ConnectionService
+class GenericProducerService(
+    private val connectionService: ConnectionService,
+    private val logService: LogService
 ) {
     fun send(queueUrl: String, message: String, delay: Int) {
         println(connectionService.sqs.listQueues().queueUrls)
@@ -23,13 +23,18 @@ class GenericProducerService (
 
     fun getQueues(): MutableList<Queue> {
         val queueResponse: MutableList<Queue> = mutableListOf()
-        connectionService.sqs.listQueues().queueUrls.forEach {
-            queueResponse.add(
-                Queue(
-                    name = it.substringAfterLast("/"),
-                    url = it
+        try {
+            connectionService.sqs.listQueues().queueUrls.forEach {
+                queueResponse.add(
+                    Queue(
+                        name = it.substringAfterLast("/"),
+                        url = it
+                    )
                 )
-            )
+            }
+        } catch (ex: SdkClientException) {
+            println(ex.message)
+            logService.log(ex.message ?: "Internal Error")
         }
         return queueResponse
     }

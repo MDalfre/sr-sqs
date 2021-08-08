@@ -1,5 +1,6 @@
 package service
 
+import com.amazonaws.SdkClientException
 import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
@@ -14,10 +15,17 @@ class ConnectionService(
     secretKey: String
 ) {
     var credentials: AWSCredentials = BasicAWSCredentials(accessKey, secretKey)
+    lateinit var sqs: AmazonSQS
 
-    var sqs: AmazonSQS = AmazonSQSClientBuilder
-        .standard()
-        .withCredentials(AWSStaticCredentialsProvider(credentials))
-        .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(serverUrl, Regions.US_EAST_1.name))
-        .build()
+    init {
+        try {
+            sqs = AmazonSQSClientBuilder
+                .standard()
+                .withCredentials(AWSStaticCredentialsProvider(credentials))
+                .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(serverUrl, Regions.US_EAST_1.name))
+                .build()
+        } catch (ex: SdkClientException) {
+            println(ex.message)
+        }
+    }
 }
