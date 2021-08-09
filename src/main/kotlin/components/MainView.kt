@@ -46,25 +46,20 @@ import service.LogService
 
 
 var connectionService: ConnectionService? = null
-val logService: LogService = LogService()
 
 @Composable
-fun mainView() {
+fun mainView(
+    logService: LogService
+) {
 
     val buttonModifier = Modifier.padding(10.dp)
 
     var expandedToSend by remember { mutableStateOf(false) }
     var expandedToReceive by remember { mutableStateOf(false) }
 
-    val iconOne = if (expandedToSend)
-        Icons.Filled.KeyboardArrowUp
-    else
-        Icons.Filled.KeyboardArrowDown
+    val iconOne = if (expandedToSend) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
 
-    val iconTwo = if (expandedToReceive)
-        Icons.Filled.KeyboardArrowUp
-    else
-        Icons.Filled.KeyboardArrowDown
+    val iconTwo = if (expandedToReceive) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
 
     var selectedQueueToSend by remember { mutableStateOf("") }
     var selectedUrlToSend by remember { mutableStateOf("") }
@@ -122,7 +117,34 @@ fun mainView() {
                 Text("Connect")
             }
         }
+        /** System log **/
+        Column(
+            modifier = Modifier.padding(top = 10.dp)
+        ) {
+            Text(
+                text = "System log",
+                modifier = Modifier.padding(start = 3.dp),
+                style = TextStyle(fontSize = 13.sp),
+                color = Color.Gray
+            )
+            LazyColumn(
+                Modifier
+                    .fillMaxWidth()
+                    .height(417.dp)
+                    .border(0.5.dp, color = Color.Gray, shape = RoundedCornerShape(5.dp))
+                    .height(30.dp),
+                state = listState,
+            ) {
+                items(systemLog) { logMessage ->
+                    CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+                        Text(logMessage, style = MaterialTheme.typography.body2)
+                    }
+                }
+            }
 
+
+        }
+        /** System log end **/
 
     }
     Column(
@@ -272,9 +294,10 @@ fun mainView() {
         }
     }
 
-    if (logService.systemLog.size != systemLog.size) {
+    if (systemLog.size != logService.systemLog.size) {
+        println("systemLog:" + systemLog.size)
+        println("logService: " + logService.systemLog.size)
         systemLog = logService.systemLog.map { it }
-        println(systemLog)
     }
 }
 

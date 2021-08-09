@@ -35,6 +35,7 @@ class GenericProducerService(
         } catch (ex: SdkClientException) {
             println(ex.message)
             logService.log(ex.message ?: "Internal Error")
+            throw ex
         }
         return queueResponse
     }
