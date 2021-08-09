@@ -1,23 +1,45 @@
 package components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Card
+import androidx.compose.material.ContentAlpha
+import androidx.compose.material.Divider
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.Icon
+import androidx.compose.material.LocalContentAlpha
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -30,36 +52,40 @@ import model.Log
 import model.LogType
 import model.Queue
 import service.ConnectionService
-import service.GenericProducerService
+import service.GenericSqsService
 import service.LogService
 
-
+const val ALERT_WIDTH = 600
+const val ALERT_HEIGHT = 450
 var connectionService: ConnectionService? = null
 
+@Suppress("LongMethod")
 @Composable
 fun mainView(
     logService: LogService
 ) {
 
+    /** States **/
+    /* Styles */
     val buttonModifier = Modifier.padding(10.dp)
     val defaultButtonColor = ButtonDefaults.buttonColors(backgroundColor = Color.DarkGray, contentColor = Color.White)
 
+    /* DropDownMenu */
     var expandedToSend by remember { mutableStateOf(false) }
     var expandedToReceive by remember { mutableStateOf(false) }
-
     val iconOne = if (expandedToSend) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
-
     val iconTwo = if (expandedToReceive) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
+    var selectedQueueToSend by remember { mutableStateOf(" ") }
+    var selectedQueueToReceive by remember { mutableStateOf(" ") }
+    var selectedUrlToSend by remember { mutableStateOf("") }
+    var selectedUrlToReceive by remember { mutableStateOf("") }
 
+    /* AlertDialog */
     var showAlert by remember { mutableStateOf(false) }
     var titleAlert by remember { mutableStateOf(" ") }
     var bodyAlert by remember { mutableStateOf(" ") }
 
-    var selectedQueueToSend by remember { mutableStateOf(" ") }
-    var selectedUrlToSend by remember { mutableStateOf("") }
-    var selectedQueueToReceive by remember { mutableStateOf(" ") }
-    var selectedUrlToReceive by remember { mutableStateOf("") }
-
+    /* Button&TextFields */
     var connecting by remember { mutableStateOf(false) }
     var queues by remember { mutableStateOf(listOf<Queue>()) }
     var receivedMessages by remember { mutableStateOf(listOf<Message>()) }
@@ -67,9 +93,10 @@ fun mainView(
     var serverUrl by remember { mutableStateOf("http://localhost:4566") }
     var accessKey by remember { mutableStateOf("docker") }
     var secretKey by remember { mutableStateOf("docker") }
-
     var message by remember { mutableStateOf("") }
     var systemLog by remember { mutableStateOf(listOf<Log>()) }
+
+    /** End of States **/
 
     Column(
         modifier = Modifier
@@ -106,7 +133,7 @@ fun mainView(
                     Thread {
                         connecting = true
                         connectionService = ConnectionService(serverUrl, accessKey, secretKey, logService)
-                        queues = GenericProducerService(connectionService!!, logService).getQueues()
+                        queues = GenericSqsService(connectionService!!, logService).getQueues()
                     }.start()
                 }) {
                 Text("Connect")
@@ -119,7 +146,6 @@ fun mainView(
                     Thread {
                         connecting = false
                         connectionService!!.disconnect()
-                        queues = GenericProducerService(connectionService!!, logService).getQueues()
                     }.start()
                 }) {
                 Text("Disconnect")
@@ -138,7 +164,7 @@ fun mainView(
             LazyColumn(
                 Modifier
                     .fillMaxWidth()
-                    .height(410.dp)
+                    .height(300.dp)
                     .border(0.5.dp, color = Color.Gray, shape = RoundedCornerShape(5.dp))
                     .height(30.dp),
                 state = listState,
@@ -155,13 +181,24 @@ fun mainView(
                         CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
                             Text(logMessage.message, style = MaterialTheme.typography.caption, color = color)
                         }
+                        Divider()
                     }
                 }
             }
+            Row(
+                Modifier.fillMaxWidth()
+                    .align(Alignment.Start)
+            ) {
+                Image(
+                    imageResource("logo.png"),
+                    contentDescription = "SR SQS",
+                    alignment = Alignment.BottomStart
+                )
+            }
         }
         /** System log end **/
-
     }
+    /* Center Column */
     Column(
         modifier = Modifier.width(450.dp)
     ) {
@@ -204,23 +241,21 @@ fun mainView(
         ) {
             Button(
                 modifier = buttonModifier.padding(bottom = 16.dp),
+                enabled = connecting && (selectedQueueToSend != " "),
                 colors = defaultButtonColor,
                 onClick = {
                     Thread {
-                        GenericProducerService(connectionService!!, logService).send(
-                            selectedUrlToSend,
-                            message,
-                            1
-                        )
+                        GenericSqsService(connectionService!!, logService).send(selectedUrlToSend, message, 1)
                     }.start()
                 }
             ) {
-                Text("Send Message")
+                Text("Produce Message")
             }
         }
     }
+    /* Right Column */
     Column(
-        modifier = Modifier.width(450.dp).padding(start = 16.dp, bottom = 16.dp)
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
     ) {
         Row {
             OutlinedTextField(
@@ -278,12 +313,15 @@ fun mainView(
                             },
                         elevation = 10.dp
                     ) {
-                        Column {
+                        Column(
+                            modifier = Modifier.padding(5.dp)
+                        ) {
                             Text("Id: ${it.messageId}")
                             CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
                                 Text(it.body, style = MaterialTheme.typography.body2)
                             }
                         }
+
                     }
                 }
             }
@@ -291,7 +329,7 @@ fun mainView(
         if (showAlert) {
             Dialog(
                 onDismissRequest = { showAlert = !showAlert },
-                properties = DialogProperties(title = "MessageId: $titleAlert", IntSize(600, 450)),
+                properties = DialogProperties(title = "MessageId: $titleAlert", IntSize(ALERT_WIDTH, ALERT_HEIGHT)),
                 content = {
                     Column(
                         Modifier.padding(16.dp)
@@ -314,16 +352,17 @@ fun mainView(
         ) {
             Button(
                 modifier = buttonModifier,
+                enabled = connecting && (selectedQueueToReceive != " "),
                 colors = defaultButtonColor,
                 onClick = {
                     Thread {
-                        val result = GenericProducerService(connectionService!!, logService)
+                        val result = GenericSqsService(connectionService!!, logService)
                             .receive(selectedUrlToReceive)
-                        if (result.size > 0) receivedMessages = result
+                        receivedMessages = result
                     }.start()
                 }
             ) {
-                Text("Receive Messages")
+                Text("Consume Messages")
             }
         }
     }

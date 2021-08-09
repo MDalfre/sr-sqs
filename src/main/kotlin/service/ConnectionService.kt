@@ -33,8 +33,9 @@ class ConnectionService(
 
     fun disconnect() {
         try {
+            logService.info("Disconnecting from server")
             sqs.shutdown()
-        } catch (ex: Exception) {
+        } catch (ex: SdkClientException) {
             logService.error(ex.message)
             throw ex
         }

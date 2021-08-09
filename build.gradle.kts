@@ -1,17 +1,18 @@
 import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import io.gitlab.arturbosch.detekt.Detekt
 
 plugins {
     kotlin("jvm") version "1.5.10"
     id("org.jetbrains.compose") version "0.4.0"
+    id("io.gitlab.arturbosch.detekt").version("1.18.0-RC3")
 }
 
 group = "ma.dalfre"
-version = "1.0"
+version = "1.0.0"
 
 repositories {
-    jcenter()
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
 }
@@ -23,7 +24,10 @@ dependencies {
 }
 
 tasks.withType<KotlinCompile>() {
-    kotlinOptions.jvmTarget = "11"
+    kotlinOptions.jvmTarget = "15"
+}
+tasks.withType<Detekt>().configureEach {
+    jvmTarget = "1.8"
 }
 
 compose.desktop {
@@ -33,6 +37,14 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "sr-sqs"
             packageVersion = "1.0.0"
+            windows {
+                console = false
+                menuGroup = "Sr Sqs"
+                iconFile.set(project.file("src/main/resources/icon.ico"))
+            }
+            linux {
+                iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))
+            }
         }
     }
 }

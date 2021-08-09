@@ -8,7 +8,10 @@ import com.amazonaws.services.sqs.model.SendMessageRequest
 import model.Queue
 
 
-class GenericProducerService(
+const val WAIT_TIME_SECONDS = 1
+const val MAX_NUMBER_OF_MESSAGES = 10
+
+class GenericSqsService(
     private val connectionService: ConnectionService,
     private val logService: LogService
 ) {
@@ -50,15 +53,17 @@ class GenericProducerService(
     fun receive(queueUrl: String): MutableList<Message> {
         val queueResponse: MutableList<Message> = mutableListOf()
         try {
+            logService.info("Fetching Queue")
             val receiveMessageRequest = ReceiveMessageRequest(queueUrl)
-                .withWaitTimeSeconds(1)
-                .withMaxNumberOfMessages(10)
+                .withWaitTimeSeconds(WAIT_TIME_SECONDS)
+                .withMaxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)
 
             val sqsMessages: MutableList<Message>? =
                 connectionService.sqs.receiveMessage(receiveMessageRequest).messages
 
             sqsMessages?.forEach {
                 queueResponse.add(it)
+                connectionService.sqs.deleteMessage(queueUrl, it.receiptHandle )
             }
             return queueResponse
         } catch (ex: AmazonSQSException) {
