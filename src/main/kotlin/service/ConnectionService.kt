@@ -12,20 +12,31 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder
 class ConnectionService(
     serverUrl: String,
     accessKey: String,
-    secretKey: String
+    secretKey: String,
+    private val logService: LogService
 ) {
     var credentials: AWSCredentials = BasicAWSCredentials(accessKey, secretKey)
     lateinit var sqs: AmazonSQS
 
     init {
         try {
+            logService.info("Connecting SQS ...")
             sqs = AmazonSQSClientBuilder
                 .standard()
                 .withCredentials(AWSStaticCredentialsProvider(credentials))
                 .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(serverUrl, Regions.US_EAST_1.name))
                 .build()
         } catch (ex: SdkClientException) {
-            println(ex.message)
+            logService.error(ex.message)
+        }
+    }
+
+    fun disconnect() {
+        try {
+            sqs.shutdown()
+        } catch (ex: Exception) {
+            logService.error(ex.message)
+            throw ex
         }
     }
 }

@@ -1,6 +1,7 @@
 package service
 
 import com.amazonaws.SdkClientException
+import com.amazonaws.services.sqs.model.AmazonSQSException
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.SendMessageRequest
@@ -12,18 +13,24 @@ class GenericProducerService(
     private val logService: LogService
 ) {
     fun send(queueUrl: String, message: String, delay: Int) {
-        println(connectionService.sqs.listQueues().queueUrls)
-        val sendMessageRequest = SendMessageRequest()
-            .withQueueUrl(queueUrl)
-            .withMessageBody(message)
-            .withDelaySeconds(delay)
+        try {
+            logService.info("Sending message")
+            val sendMessageRequest = SendMessageRequest()
+                .withQueueUrl(queueUrl)
+                .withMessageBody(message)
+                .withDelaySeconds(delay)
 
-        connectionService.sqs.sendMessage(sendMessageRequest)
+            connectionService.sqs.sendMessage(sendMessageRequest)
+        } catch (ex: AmazonSQSException) {
+            logService.error(ex.message)
+            throw ex
+        }
     }
 
     fun getQueues(): MutableList<Queue> {
         val queueResponse: MutableList<Queue> = mutableListOf()
         try {
+            logService.info("Retrieving queues")
             connectionService.sqs.listQueues().queueUrls.forEach {
                 queueResponse.add(
                     Queue(
@@ -32,26 +39,31 @@ class GenericProducerService(
                     )
                 )
             }
+            return queueResponse
         } catch (ex: SdkClientException) {
             println(ex.message)
-            logService.log(ex.message ?: "Internal Error")
+            logService.error(ex.message)
             throw ex
         }
-        return queueResponse
     }
 
     fun receive(queueUrl: String): MutableList<Message> {
         val queueResponse: MutableList<Message> = mutableListOf()
-        val receiveMessageRequest = ReceiveMessageRequest(queueUrl)
-            .withWaitTimeSeconds(1)
-            .withMaxNumberOfMessages(10)
+        try {
+            val receiveMessageRequest = ReceiveMessageRequest(queueUrl)
+                .withWaitTimeSeconds(1)
+                .withMaxNumberOfMessages(10)
 
-        val sqsMessages: MutableList<Message>? = connectionService.sqs.receiveMessage(receiveMessageRequest).messages
+            val sqsMessages: MutableList<Message>? =
+                connectionService.sqs.receiveMessage(receiveMessageRequest).messages
 
-        sqsMessages?.forEach {
-            queueResponse.add(it)
+            sqsMessages?.forEach {
+                queueResponse.add(it)
+            }
+            return queueResponse
+        } catch (ex: AmazonSQSException) {
+            logService.error(ex.message)
+            throw ex
         }
-        return queueResponse
     }
-
 }

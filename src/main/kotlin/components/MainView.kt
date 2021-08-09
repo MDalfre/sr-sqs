@@ -1,44 +1,33 @@
 package components
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.v1.Dialog
+import androidx.compose.ui.window.v1.DialogProperties
 import com.amazonaws.services.sqs.model.Message
+import commons.objectToJson
+import model.Log
+import model.LogType
 import model.Queue
 import service.ConnectionService
 import service.GenericProducerService
@@ -53,6 +42,7 @@ fun mainView(
 ) {
 
     val buttonModifier = Modifier.padding(10.dp)
+    val defaultButtonColor = ButtonDefaults.buttonColors(backgroundColor = Color.DarkGray, contentColor = Color.White)
 
     var expandedToSend by remember { mutableStateOf(false) }
     var expandedToReceive by remember { mutableStateOf(false) }
@@ -61,9 +51,13 @@ fun mainView(
 
     val iconTwo = if (expandedToReceive) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
 
-    var selectedQueueToSend by remember { mutableStateOf("") }
+    var showAlert by remember { mutableStateOf(false) }
+    var titleAlert by remember { mutableStateOf(" ") }
+    var bodyAlert by remember { mutableStateOf(" ") }
+
+    var selectedQueueToSend by remember { mutableStateOf(" ") }
     var selectedUrlToSend by remember { mutableStateOf("") }
-    var selectedQueueToReceive by remember { mutableStateOf("") }
+    var selectedQueueToReceive by remember { mutableStateOf(" ") }
     var selectedUrlToReceive by remember { mutableStateOf("") }
 
     var connecting by remember { mutableStateOf(false) }
@@ -75,7 +69,7 @@ fun mainView(
     var secretKey by remember { mutableStateOf("docker") }
 
     var message by remember { mutableStateOf("") }
-    var systemLog by remember { mutableStateOf(listOf<String>()) }
+    var systemLog by remember { mutableStateOf(listOf<Log>()) }
 
     Column(
         modifier = Modifier
@@ -106,15 +100,29 @@ fun mainView(
         ) {
             Button(
                 enabled = !connecting,
+                colors = defaultButtonColor,
                 modifier = buttonModifier,
                 onClick = {
                     Thread {
                         connecting = true
-                        connectionService = ConnectionService(serverUrl, accessKey, secretKey)
+                        connectionService = ConnectionService(serverUrl, accessKey, secretKey, logService)
                         queues = GenericProducerService(connectionService!!, logService).getQueues()
                     }.start()
                 }) {
                 Text("Connect")
+            }
+            Button(
+                enabled = connecting,
+                colors = defaultButtonColor,
+                modifier = buttonModifier,
+                onClick = {
+                    Thread {
+                        connecting = false
+                        connectionService!!.disconnect()
+                        queues = GenericProducerService(connectionService!!, logService).getQueues()
+                    }.start()
+                }) {
+                Text("Disconnect")
             }
         }
         /** System log **/
@@ -130,19 +138,26 @@ fun mainView(
             LazyColumn(
                 Modifier
                     .fillMaxWidth()
-                    .height(417.dp)
+                    .height(410.dp)
                     .border(0.5.dp, color = Color.Gray, shape = RoundedCornerShape(5.dp))
                     .height(30.dp),
                 state = listState,
             ) {
                 items(systemLog) { logMessage ->
-                    CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                        Text(logMessage, style = MaterialTheme.typography.body2)
+                    val color = when (logMessage.type) {
+                        LogType.INFO -> Color.DarkGray
+                        LogType.WARN -> Color.Yellow
+                        LogType.ERROR -> Color.Red
+                    }
+                    Column(
+                        Modifier.padding(5.dp)
+                    ) {
+                        CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+                            Text(logMessage.message, style = MaterialTheme.typography.caption, color = color)
+                        }
                     }
                 }
             }
-
-
         }
         /** System log end **/
 
@@ -184,11 +199,12 @@ fun mainView(
             onValueChange = { message = it },
         )
         Row(
-            Modifier,
+            Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(
                 modifier = buttonModifier.padding(bottom = 16.dp),
+                colors = defaultButtonColor,
                 onClick = {
                     Thread {
                         GenericProducerService(connectionService!!, logService).send(
@@ -233,7 +249,6 @@ fun mainView(
                 }
             }
         }
-        /** STARTS HERE **/
         Column(
             modifier = Modifier.padding(top = 10.dp)
         ) {
@@ -257,12 +272,14 @@ fun mainView(
                             .fillMaxWidth()
                             .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
                             .clickable {
-
+                                titleAlert = it.messageId
+                                bodyAlert = it.objectToJson() ?: "Fail to serialize"
+                                showAlert = true
                             },
                         elevation = 10.dp
                     ) {
                         Column {
-                            Text("MessageId: ${it.messageId}")
+                            Text("Id: ${it.messageId}")
                             CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
                                 Text(it.body, style = MaterialTheme.typography.body2)
                             }
@@ -270,10 +287,26 @@ fun mainView(
                     }
                 }
             }
-
-
         }
-        /** ENDS HERE **/
+        if (showAlert) {
+            Dialog(
+                onDismissRequest = { showAlert = !showAlert },
+                properties = DialogProperties(title = "MessageId: $titleAlert", IntSize(600, 450)),
+                content = {
+                    Column(
+                        Modifier.padding(16.dp)
+                    ) {
+                        defaultTextEditor(
+                            modifier = Modifier.height(300.dp),
+                            text = "SQS message details",
+                            value = bodyAlert,
+                            onValueChange = {},
+                        )
+                    }
+                }
+            )
+        }
+
         Row(
             Modifier
                 .fillMaxSize(),
@@ -281,11 +314,12 @@ fun mainView(
         ) {
             Button(
                 modifier = buttonModifier,
+                colors = defaultButtonColor,
                 onClick = {
                     Thread {
-                        receivedMessages = receivedMessages.plus(
-                            GenericProducerService(connectionService!!, logService).receive(selectedUrlToReceive)
-                        )
+                        val result = GenericProducerService(connectionService!!, logService)
+                            .receive(selectedUrlToReceive)
+                        if (result.size > 0) receivedMessages = result
                     }.start()
                 }
             ) {
@@ -295,8 +329,6 @@ fun mainView(
     }
 
     if (systemLog.size != logService.systemLog.size) {
-        println("systemLog:" + systemLog.size)
-        println("logService: " + logService.systemLog.size)
         systemLog = logService.systemLog.map { it }
     }
 }
