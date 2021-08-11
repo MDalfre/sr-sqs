@@ -28,7 +28,6 @@ fun main() = Window(
             Modifier.background(backgroundBlue)
         ) {
             mainView(logService)
-
         }
         Column {
             topBar(logService)
