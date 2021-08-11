@@ -1,10 +1,7 @@
 package service
 
 import com.amazonaws.SdkClientException
-import com.amazonaws.services.sqs.model.AmazonSQSException
-import com.amazonaws.services.sqs.model.Message
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest
-import com.amazonaws.services.sqs.model.SendMessageRequest
+import com.amazonaws.services.sqs.model.*
 import model.Queue
 
 
@@ -63,12 +60,17 @@ class GenericSqsService(
 
             sqsMessages?.forEach {
                 queueResponse.add(it)
-                connectionService.sqs.deleteMessage(queueUrl, it.receiptHandle )
+                connectionService.sqs.deleteMessage(queueUrl, it.receiptHandle)
             }
             return queueResponse
         } catch (ex: AmazonSQSException) {
             logService.error(ex.message)
             throw ex
         }
+    }
+
+    fun createQueue(queueNme: String) {
+        val createStandardQueueRequest = CreateQueueRequest(queueNme)
+        connectionService.sqs.createQueue(createStandardQueueRequest)
     }
 }
