@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "ma.dalfre"
-version = "1.0.1"
+version = "1.1.1"
 
 repositories {
     mavenCentral()
@@ -36,7 +36,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "sr-sqs"
-            packageVersion = "1.0.1"
+            packageVersion = "1.1.1"
             windows {
                 console = false
                 menuGroup = "Sr Sqs"
