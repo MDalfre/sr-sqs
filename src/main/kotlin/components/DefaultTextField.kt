@@ -11,9 +11,11 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import commons.lightBlue
 
 @Composable
 fun defaultTextField(
@@ -29,17 +31,19 @@ fun defaultTextField(
             text = text,
             modifier = Modifier.padding(start = 3.dp),
             style = TextStyle(fontSize = 13.sp),
-            color = Color.Gray
+            color = lightBlue
         )
         BasicTextField(
             value = value,
+            textStyle = TextStyle(color = Color.White),
+            cursorBrush = SolidColor(Color.Gray),
             singleLine = true,
             onValueChange = onValueChange,
             decorationBox = { innerTextField ->
                 Column(
                     modifier
                         .fillMaxWidth()
-                        .border(0.5.dp, color = Color.Gray, shape = RoundedCornerShape(5.dp))
+                        .border(0.5.dp, color = lightBlue, shape = RoundedCornerShape(5.dp))
                         .height(30.dp)
                         .padding(5.dp)
                 ) {
@@ -64,17 +68,19 @@ fun defaultTextEditor(
             text = text,
             modifier = Modifier.padding(start = 3.dp),
             style = TextStyle(fontSize = 13.sp),
-            color = Color.Gray
+            color = lightBlue
         )
         BasicTextField(
             value = value,
+            textStyle = TextStyle(color = Color.White),
+            cursorBrush = SolidColor(Color.Gray),
             singleLine = false,
             onValueChange = onValueChange,
             decorationBox = { innerTextField ->
                 Column(
                     modifier
                         .fillMaxWidth()
-                        .border(0.5.dp, color = Color.Gray, shape = RoundedCornerShape(5.dp))
+                        .border(0.5.dp, color = lightBlue, shape = RoundedCornerShape(5.dp))
                         .height(30.dp)
                         .padding(5.dp)
                 ) {
