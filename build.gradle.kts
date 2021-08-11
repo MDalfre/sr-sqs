@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "ma.dalfre"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -36,10 +36,11 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "sr-sqs"
-            packageVersion = "1.0.0"
+            packageVersion = "1.0.1"
             windows {
                 console = false
                 menuGroup = "Sr Sqs"
+                modules("java.instrument", "java.management", "java.naming", "java.security.jgss", "java.sql", "jdk.unsupported")
                 iconFile.set(project.file("src/main/resources/icon.ico"))
             }
             linux {
