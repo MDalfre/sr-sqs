@@ -1,42 +1,48 @@
 package service
 
 import com.amazonaws.SdkClientException
-import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder
-import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder
+import model.ConnectionSettings
 
 class ConnectionService(
-    serverUrl: String,
-    accessKey: String,
-    secretKey: String,
-    private val logService: LogService
+    connectionSettings: ConnectionSettings,
+    private val communicationService: CommunicationService
 ) {
-    var credentials: AWSCredentials = BasicAWSCredentials(accessKey, secretKey)
+    private val selectedRegionName = connectionSettings.serverRegion.getName()
     lateinit var sqs: AmazonSQS
 
     init {
         try {
-            logService.info("Connecting SQS ...")
+            communicationService.logInfo("Connecting SQS ...")
             sqs = AmazonSQSClientBuilder
                 .standard()
-                .withCredentials(AWSStaticCredentialsProvider(credentials))
-                .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(serverUrl, Regions.US_EAST_1.name))
+                .withCredentials(
+                    AWSStaticCredentialsProvider(
+                        connectionSettings.credentialType.credential(connectionSettings)
+                    )
+                )
+                .withEndpointConfiguration(
+                    AwsClientBuilder.EndpointConfiguration(
+                        connectionSettings.serverUrl,
+                        selectedRegionName
+                    )
+                )
                 .build()
+            communicationService.logSuccess("AWS Connected")
         } catch (ex: SdkClientException) {
-            logService.error(ex.message)
+            communicationService.logError(ex.message)
         }
     }
 
     fun disconnect() {
         try {
-            logService.info("Disconnecting from server")
+            communicationService.logInfo("Disconnecting from server")
             sqs.shutdown()
         } catch (ex: SdkClientException) {
-            logService.error(ex.message)
+            communicationService.logError(ex.message)
             throw ex
         }
     }

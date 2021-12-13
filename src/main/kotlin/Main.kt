@@ -7,30 +7,33 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
-import commons.backgroundBlue
+import commons.DefaultColors.backgroundBlue
 import components.mainView
 import components.topBar
 import service.ConnectionService
-import service.LogService
+import service.CommunicationService
+import service.FileHandleService
 
 const val DEFAULT_WIDTH = 1280
 const val DEFAULT_HEIGHT = 790
-val logService: LogService = LogService()
+val communicationService: CommunicationService = CommunicationService()
 var connectionService: ConnectionService? = null
 
 fun main() = Window(
     title = "SR SQS",
     size = IntSize(DEFAULT_WIDTH, DEFAULT_HEIGHT),
-    resizable = false
+    resizable = true
 ) {
+    val configHandler = FileHandleService().readConfigFile()
+
     MaterialTheme {
         Row(
             Modifier.background(backgroundBlue)
         ) {
-            mainView(logService)
+            mainView(communicationService, configHandler)
         }
         Column {
-            topBar(logService)
+            topBar(communicationService)
         }
     }
 }

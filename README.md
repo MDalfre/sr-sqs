@@ -9,7 +9,8 @@ Simple generic Amazon SQS client designed to make asynchronous applications that
 - Consume (Receive) messages;
 - Show message details;
 - Create Queue;
-- Create configuration file for AWS LocalStack.
+- Create configuration file for AWS LocalStack;
+- Reprocess DLQ queues.
 
 SR-SQS is able to act as a generic consumer and producer to ensure your application workflow is running well.
 
@@ -17,3 +18,4 @@ SR-SQS is able to act as a generic consumer and producer to ensure your applicat
 
 ![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/master/.github/images/prtsc1.jpeg)
 ![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/master/.github/images/prtsc2.jpeg)
+![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/master/.github/images/prtsc3.jpeg)
