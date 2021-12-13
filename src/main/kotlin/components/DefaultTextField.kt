@@ -15,14 +15,15 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import commons.lightBlue
+import commons.DefaultColors.lightBlue
 
 @Composable
 fun defaultTextField(
     modifier: Modifier = Modifier,
     text: String,
     value: String,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    enabled: Boolean = true
 ) {
     Column(
         modifier = Modifier.padding(top = 10.dp)
@@ -35,6 +36,7 @@ fun defaultTextField(
         )
         BasicTextField(
             value = value,
+            enabled = enabled,
             textStyle = TextStyle(color = Color.White),
             cursorBrush = SolidColor(Color.Gray),
             singleLine = true,

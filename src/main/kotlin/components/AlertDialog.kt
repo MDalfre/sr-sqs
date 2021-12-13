@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.v1.Dialog
-import commons.backgroundBlue
+import commons.DefaultColors.backgroundBlue
 
 
 @Composable

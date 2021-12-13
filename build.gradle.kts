@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "ma.dalfre"
-version = "1.1.1"
+version = "1.2.1"
 
 repositories {
     mavenCentral()
@@ -20,7 +20,9 @@ repositories {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("com.amazonaws:aws-java-sdk:1.11.163")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.12.4")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.13.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")
+
 }
 
 tasks.withType<KotlinCompile>() {
@@ -51,6 +53,17 @@ compose.desktop {
                 iconFile.set(project.file("src/main/resources/icon.ico"))
             }
             linux {
+                modules(
+                    "java.instrument",
+                    "java.management",
+                    "java.naming",
+                    "java.security.jgss",
+                    "java.sql",
+                    "jdk.unsupported"
+                )
+                iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))
+            }
+            macOS{
                 modules(
                     "java.instrument",
                     "java.management",

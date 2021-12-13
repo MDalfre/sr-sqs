@@ -1,7 +1,13 @@
 package service
 
 import com.amazonaws.SdkClientException
-import com.amazonaws.services.sqs.model.*
+import com.amazonaws.services.sqs.model.AmazonSQSException
+import com.amazonaws.services.sqs.model.CreateQueueRequest
+import com.amazonaws.services.sqs.model.Message
+import com.amazonaws.services.sqs.model.QueueAttributeName
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest
+import com.amazonaws.services.sqs.model.SendMessageRequest
+import model.ProcessStatusEnum
 import model.Queue
 
 
@@ -10,27 +16,35 @@ const val MAX_NUMBER_OF_MESSAGES = 10
 
 class GenericSqsService(
     private val connectionService: ConnectionService,
-    private val logService: LogService
+    private val communicationService: CommunicationService
 ) {
-    fun send(queueUrl: String, message: String, delay: Int) {
-        try {
-            logService.info("Sending message")
-            val sendMessageRequest = SendMessageRequest()
-                .withQueueUrl(queueUrl)
-                .withMessageBody(message)
-                .withDelaySeconds(delay)
+    fun send(queueUrl: String, message: String, delay: Int, log: Boolean = true) {
+        val messageList = message.split("//")
+        if (log) {
+            communicationService.logInfo("Found ${messageList.size} to send")
+        }
+        messageList.forEach {
+            try {
+                val sendMessageRequest = SendMessageRequest()
+                    .withQueueUrl(queueUrl)
+                    .withMessageBody(it.trim())
+                    .withDelaySeconds(delay)
 
-            connectionService.sqs.sendMessage(sendMessageRequest)
-        } catch (ex: AmazonSQSException) {
-            logService.error(ex.message)
-            throw ex
+                connectionService.sqs.sendMessage(sendMessageRequest)
+            } catch (ex: AmazonSQSException) {
+                communicationService.logError(ex.message)
+                throw ex
+            }
+        }
+        if (log) {
+            communicationService.logSuccess("Messages sent !")
         }
     }
 
     fun getQueues(): MutableList<Queue> {
         val queueResponse: MutableList<Queue> = mutableListOf()
         try {
-            logService.info("Retrieving queues")
+            communicationService.logInfo("Retrieving queues")
             connectionService.sqs.listQueues().queueUrls.forEach {
                 queueResponse.add(
                     Queue(
@@ -42,15 +56,24 @@ class GenericSqsService(
             return queueResponse
         } catch (ex: SdkClientException) {
             println(ex.message)
-            logService.error(ex.message)
+            communicationService.logError(ex.message)
             throw ex
         }
     }
 
-    fun receive(queueUrl: String): MutableList<Message> {
+    fun getQueueSize(queueUrl: String): Int {
+        val attribute = QueueAttributeName.ApproximateNumberOfMessages.name
+        val attributesRequest = listOf(attribute)
+        val response = connectionService.sqs.getQueueAttributes(queueUrl, attributesRequest)
+        return response.attributes.getValue(attribute).toInt()
+    }
+
+    fun receive(queueUrl: String, consume: Boolean, log: Boolean = true): MutableList<Message> {
         val queueResponse: MutableList<Message> = mutableListOf()
         try {
-            logService.info("Fetching Queue")
+            if (log) {
+                communicationService.logInfo("Fetching Queue")
+            }
             val receiveMessageRequest = ReceiveMessageRequest(queueUrl)
                 .withWaitTimeSeconds(WAIT_TIME_SECONDS)
                 .withMaxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)
@@ -60,11 +83,16 @@ class GenericSqsService(
 
             sqsMessages?.forEach {
                 queueResponse.add(it)
-                connectionService.sqs.deleteMessage(queueUrl, it.receiptHandle)
+                if (consume) {
+                    connectionService.sqs.deleteMessage(queueUrl, it.receiptHandle)
+                }
+            }
+            if (log) {
+                communicationService.logSuccess("Listing last ${queueResponse.size} messages")
             }
             return queueResponse
         } catch (ex: AmazonSQSException) {
-            logService.error(ex.message)
+            communicationService.logError(ex.message)
             throw ex
         }
     }
@@ -72,5 +100,25 @@ class GenericSqsService(
     fun createQueue(queueNme: String) {
         val createStandardQueueRequest = CreateQueueRequest(queueNme)
         connectionService.sqs.createQueue(createStandardQueueRequest)
+    }
+
+    fun reprocessDlq(queueUrl: String, dlqUrl: String, delay: Long) {
+        communicationService.logWarn("Reprocessing DQL")
+        communicationService.reprocessingDql = ProcessStatusEnum.STARTED
+        getQueueSize(dlqUrl)
+        var counter = 0
+        do {
+            val dlqMessages = receive(queueUrl = dlqUrl, consume = true, log = false)
+            dlqMessages.forEach {
+                send(queueUrl = queueUrl, message = it.body.trim(), delay = 1, log = false)
+                Thread.sleep(delay)
+                counter++
+                communicationService.messageCounter = counter
+            }
+        } while (dlqMessages.size > 0)
+        communicationService.messageCounter = 0
+        communicationService.reprocessingDql = ProcessStatusEnum.COMPLETED
+        communicationService.logSuccess("$counter messages reprocessed")
+        communicationService.logSuccess("Reprocessing DLQ Finished !")
     }
 }

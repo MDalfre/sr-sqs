@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
+import androidx.compose.material.Checkbox
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
@@ -44,27 +46,30 @@ import androidx.compose.ui.window.v1.Dialog
 import androidx.compose.ui.window.v1.DialogProperties
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.model.Message
-import commons.backgroundBlue
-import commons.lightBlue
+import commons.DefaultColors.backgroundBlue
+import commons.DefaultColors.lightBlue
 import commons.objectToJson
-import commons.orange
+import commons.DefaultColors.orange
 import connectionService
+import model.ConnectionSettings
+import model.CredentialType
 import model.Log
-import model.LogType
+import model.LogTypeEnum
 import model.Queue
+import service.CommunicationService
 import service.ConnectionService
+import service.FileHandleService
 import service.GenericSqsService
-import service.LogService
 
 const val ALERT_WIDTH = 600
 const val ALERT_HEIGHT = 450
 const val ALERT_SMALL_HEIGHT = 250
 
-
-@Suppress("LongMethod")
+@Suppress("LongMethod", "ComplexMethod")
 @Composable
 fun mainView(
-    logService: LogService
+    communicationService: CommunicationService,
+    connectionSettings: ConnectionSettings
 ) {
 
     /** States **/
@@ -76,11 +81,13 @@ fun mainView(
     var expandedToSend by remember { mutableStateOf(false) }
     var expandedToReceive by remember { mutableStateOf(false) }
     var expandedRegion by remember { mutableStateOf(false) }
+    var expandedCredential by remember { mutableStateOf(false) }
     var selectedQueueToSend by remember { mutableStateOf(" ") }
     var selectedQueueToReceive by remember { mutableStateOf(" ") }
     var selectedUrlToSend by remember { mutableStateOf("") }
     var selectedUrlToReceive by remember { mutableStateOf("") }
-    var selectedRegion by remember { mutableStateOf(Regions.US_EAST_1.name) }
+    var selectedRegion by remember { mutableStateOf(connectionSettings.serverRegion.name) }
+    var selectedCredential by remember { mutableStateOf(connectionSettings.credentialType.name) }
 
     /* AlertDialog */
     var showAlert by remember { mutableStateOf(false) }
@@ -89,14 +96,16 @@ fun mainView(
 
     /* Button&TextFields */
     var connecting by remember { mutableStateOf(false) }
+    var deleteMessage by remember { mutableStateOf(true) }
     var queues by remember { mutableStateOf(listOf<Queue>()) }
     var receivedMessages by remember { mutableStateOf(listOf<Message>()) }
     val listState = rememberLazyListState()
-    var serverUrl by remember { mutableStateOf("http://localhost:4566") }
-    var accessKey by remember { mutableStateOf("docker") }
-    var secretKey by remember { mutableStateOf("docker") }
+    var serverUrl by remember { mutableStateOf(connectionSettings.serverUrl) }
+    var accessKey by remember { mutableStateOf(connectionSettings.accessKey) }
+    var secretKey by remember { mutableStateOf(connectionSettings.secretKey) }
+    var sessionKey by remember { mutableStateOf(connectionSettings.sessionKey) }
     var message by remember { mutableStateOf("") }
-    var systemLog by remember { mutableStateOf(listOf<Log>()) }
+    var systemLog by mutableStateOf(listOf<Log>())
 
     /** End of States **/
 
@@ -105,7 +114,30 @@ fun mainView(
             .padding(start = 16.dp, end = 16.dp, top = 25.dp)
             .width(300.dp)
     ) {
-
+        Row {
+            defaultTextField(
+                modifier = Modifier.clickable { expandedCredential = !expandedCredential },
+                text = "Credential Type",
+                value = selectedCredential,
+                onValueChange = { selectedCredential = it }
+            )
+            DropdownMenu(
+                expanded = expandedCredential,
+                onDismissRequest = { expandedCredential = !expandedCredential }
+            ) {
+                CredentialType.values().forEach {
+                    DropdownMenuItem(
+                        modifier = Modifier.padding(5.dp).height(15.dp),
+                        onClick = {
+                            selectedCredential = it.name
+                            expandedCredential = !expandedCredential
+                        }
+                    ) {
+                        Text(text = it.name, style = TextStyle(fontSize = 10.sp))
+                    }
+                }
+            }
+        }
         defaultTextField(
             text = "Server URL",
             value = serverUrl,
@@ -121,6 +153,13 @@ fun mainView(
             value = secretKey,
             onValueChange = { secretKey = it }
         )
+        if (selectedCredential == CredentialType.SESSION.name) {
+            defaultTextField(
+                text = "Session Key",
+                value = sessionKey,
+                onValueChange = { sessionKey = it }
+            )
+        }
         Row {
             defaultTextField(
                 modifier = Modifier.clickable { expandedRegion = !expandedRegion },
@@ -145,8 +184,6 @@ fun mainView(
                 }
             }
         }
-
-
         Row(
             Modifier
                 .fillMaxWidth(),
@@ -157,10 +194,25 @@ fun mainView(
                 colors = defaultButtonColor,
                 modifier = buttonModifier,
                 onClick = {
+                    val settings = ConnectionSettings(
+                        credentialType = CredentialType.valueOf(selectedCredential),
+                        serverUrl = serverUrl,
+                        accessKey = accessKey,
+                        secretKey = secretKey,
+                        sessionKey = sessionKey,
+                        serverRegion = Regions.valueOf(selectedRegion)
+                    )
+                    FileHandleService().createConfigFile(settings)
                     Thread {
                         connecting = true
-                        connectionService = ConnectionService(serverUrl, accessKey, secretKey, logService)
-                        queues = GenericSqsService(connectionService!!, logService).getQueues()
+                        connectionService = ConnectionService(
+                            connectionSettings = settings,
+                            communicationService = communicationService
+                        )
+                        queues = GenericSqsService(
+                            connectionService = requireNotNull(connectionService) { "SQS service not connected" },
+                            communicationService = communicationService
+                        ).getQueues()
                     }.start()
                 }) {
                 Text("Connect")
@@ -198,9 +250,10 @@ fun mainView(
             ) {
                 items(systemLog) { logMessage ->
                     val color = when (logMessage.type) {
-                        LogType.INFO -> Color.Gray
-                        LogType.WARN -> Color.Yellow
-                        LogType.ERROR -> Color.Red
+                        LogTypeEnum.INFO -> Color.Gray
+                        LogTypeEnum.WARN -> Color.Yellow
+                        LogTypeEnum.ERROR -> Color.Red
+                        LogTypeEnum.SUCCESS -> Color.Green
                     }
                     Column(
                         Modifier.padding(5.dp)
@@ -233,7 +286,7 @@ fun mainView(
             defaultTextField(
                 modifier = Modifier.clickable {
                     if (connectionService != null) {
-                        queues = GenericSqsService(connectionService!!, logService).getQueues()
+                        queues = GenericSqsService(connectionService!!, communicationService).getQueues()
                     }
                     expandedToSend = !expandedToSend
                 },
@@ -242,7 +295,7 @@ fun mainView(
                 onValueChange = { selectedQueueToSend = it }
             )
             DropdownMenu(
-                modifier = Modifier.width(450.dp),
+                modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp),
                 expanded = expandedToSend,
                 onDismissRequest = { expandedToSend = false },
             ) {
@@ -276,7 +329,7 @@ fun mainView(
                 colors = defaultButtonColor,
                 onClick = {
                     Thread {
-                        GenericSqsService(connectionService!!, logService).send(selectedUrlToSend, message, 1)
+                        GenericSqsService(connectionService!!, communicationService).send(selectedUrlToSend, message, 1)
                     }.start()
                 }
             ) {
@@ -292,7 +345,7 @@ fun mainView(
             defaultTextField(
                 modifier = Modifier.clickable {
                     if (connectionService != null) {
-                        queues = GenericSqsService(connectionService!!, logService).getQueues()
+                        queues = GenericSqsService(connectionService!!, communicationService).getQueues()
                     }
                     expandedToReceive = !expandedToReceive
                 },
@@ -301,7 +354,7 @@ fun mainView(
                 onValueChange = { selectedQueueToReceive = it }
             )
             DropdownMenu(
-                modifier = Modifier.width(450.dp),
+                modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp),
                 expanded = expandedToReceive,
                 onDismissRequest = { expandedToReceive = false },
             ) {
@@ -384,7 +437,6 @@ fun mainView(
                 }
             )
         }
-
         Row(
             Modifier
                 .fillMaxSize(),
@@ -396,19 +448,31 @@ fun mainView(
                 colors = defaultButtonColor,
                 onClick = {
                     Thread {
-                        val result = GenericSqsService(connectionService!!, logService)
-                            .receive(selectedUrlToReceive)
+                        val result = GenericSqsService(connectionService!!, communicationService)
+                            .receive(queueUrl = selectedUrlToReceive, consume = deleteMessage)
                         receivedMessages = result
                     }.start()
                 }
             ) {
                 Text("Consume Messages")
             }
+            Row(modifier = Modifier.padding(all = 1.dp).height(60.dp)) {
+                Checkbox(
+                    modifier = buttonModifier.padding(all = 2.dp),
+                    checked = deleteMessage,
+                    onCheckedChange = { deleteMessage = !deleteMessage },
+                )
+                Text(
+                    text = "Delete message",
+                    modifier = Modifier.padding(top = 15.dp),
+                    style = TextStyle(fontSize = 13.sp),
+                    color = lightBlue
+                )
+            }
         }
     }
 
-    if (systemLog.size != logService.systemLog.size) {
-        systemLog = logService.systemLog.map { it }
+    if (systemLog.size != communicationService.systemLog.size) {
+        systemLog = communicationService.systemLog.map { it }.reversed()
     }
 }
-

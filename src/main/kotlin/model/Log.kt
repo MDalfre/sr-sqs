@@ -1,6 +1,6 @@
 package model
 
 data class Log(
-    val type: LogType,
+    val type: LogTypeEnum,
     val message: String
 )
