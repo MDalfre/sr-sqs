@@ -1,21 +1,20 @@
 package service
 
 import com.amazonaws.SdkClientException
-import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder
+import model.ConnectionSettings
+import model.CredentialType
 
 class ConnectionService(
-    serverUrl: String,
-    accessKey: String,
-    secretKey: String,
+    connectionSettings: ConnectionSettings,
+    credentialType: CredentialType,
     private val logService: LogService
 ) {
-    var credentials: AWSCredentials = BasicAWSCredentials(accessKey, secretKey)
+    private val selectedRegionName = Regions.valueOf(connectionSettings.serverRegion).getName()
     lateinit var sqs: AmazonSQS
 
     init {
@@ -23,8 +22,17 @@ class ConnectionService(
             logService.info("Connecting SQS ...")
             sqs = AmazonSQSClientBuilder
                 .standard()
-                .withCredentials(AWSStaticCredentialsProvider(credentials))
-                .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(serverUrl, Regions.US_EAST_1.name))
+                .withCredentials(
+                    AWSStaticCredentialsProvider(
+                        credentialType.credential(connectionSettings)
+                    )
+                )
+                .withEndpointConfiguration(
+                    AwsClientBuilder.EndpointConfiguration(
+                        connectionSettings.serverUrl,
+                        selectedRegionName
+                    )
+                )
                 .build()
         } catch (ex: SdkClientException) {
             logService.error(ex.message)

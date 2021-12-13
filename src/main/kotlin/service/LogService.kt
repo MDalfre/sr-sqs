@@ -2,9 +2,16 @@ package service
 
 import model.Log
 import model.LogType
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.TimeUnit
 
 class LogService {
     val systemLog = mutableListOf<Log>()
+    var workQueue: BlockingQueue<String>? = null
+
+    fun worker(workQueue: BlockingQueue<String>) {
+        this.workQueue = workQueue
+    }
 
     fun info(message: String) {
         systemLog.add(

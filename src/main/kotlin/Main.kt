@@ -4,6 +4,8 @@ import androidx.compose.desktop.Window
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
@@ -21,7 +23,7 @@ var connectionService: ConnectionService? = null
 fun main() = Window(
     title = "SR SQS",
     size = IntSize(DEFAULT_WIDTH, DEFAULT_HEIGHT),
-    resizable = false
+    resizable = true
 ) {
     MaterialTheme {
         Row(

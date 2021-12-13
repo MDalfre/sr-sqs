@@ -20,7 +20,9 @@ repositories {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("com.amazonaws:aws-java-sdk:1.11.163")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.12.4")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.13.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")
+
 }
 
 tasks.withType<KotlinCompile>() {
