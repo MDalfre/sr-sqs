@@ -31,11 +31,9 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,28 +46,30 @@ import androidx.compose.ui.window.v1.Dialog
 import androidx.compose.ui.window.v1.DialogProperties
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.model.Message
-import commons.backgroundBlue
-import commons.lightBlue
+import commons.DefaultColors.backgroundBlue
+import commons.DefaultColors.lightBlue
 import commons.objectToJson
-import commons.orange
+import commons.DefaultColors.orange
 import connectionService
 import model.ConnectionSettings
 import model.CredentialType
 import model.Log
-import model.LogType
+import model.LogTypeEnum
 import model.Queue
+import service.CommunicationService
 import service.ConnectionService
+import service.FileHandleService
 import service.GenericSqsService
-import service.LogService
 
 const val ALERT_WIDTH = 600
 const val ALERT_HEIGHT = 450
 const val ALERT_SMALL_HEIGHT = 250
 
-@Suppress("LongMethod")
+@Suppress("LongMethod", "ComplexMethod")
 @Composable
 fun mainView(
-    logService: LogService
+    communicationService: CommunicationService,
+    connectionSettings: ConnectionSettings
 ) {
 
     /** States **/
@@ -86,8 +86,8 @@ fun mainView(
     var selectedQueueToReceive by remember { mutableStateOf(" ") }
     var selectedUrlToSend by remember { mutableStateOf("") }
     var selectedUrlToReceive by remember { mutableStateOf("") }
-    var selectedRegion by remember { mutableStateOf(Regions.US_EAST_1.name) }
-    var selectedCredential by remember { mutableStateOf(CredentialType.BASIC.name) }
+    var selectedRegion by remember { mutableStateOf(connectionSettings.serverRegion.name) }
+    var selectedCredential by remember { mutableStateOf(connectionSettings.credentialType.name) }
 
     /* AlertDialog */
     var showAlert by remember { mutableStateOf(false) }
@@ -100,10 +100,10 @@ fun mainView(
     var queues by remember { mutableStateOf(listOf<Queue>()) }
     var receivedMessages by remember { mutableStateOf(listOf<Message>()) }
     val listState = rememberLazyListState()
-    var serverUrl by remember { mutableStateOf("http://localhost:4566") }
-    var accessKey by remember { mutableStateOf("docker") }
-    var secretKey by remember { mutableStateOf("docker") }
-    var sessionKey by remember { mutableStateOf("docker") }
+    var serverUrl by remember { mutableStateOf(connectionSettings.serverUrl) }
+    var accessKey by remember { mutableStateOf(connectionSettings.accessKey) }
+    var secretKey by remember { mutableStateOf(connectionSettings.secretKey) }
+    var sessionKey by remember { mutableStateOf(connectionSettings.sessionKey) }
     var message by remember { mutableStateOf("") }
     var systemLog by mutableStateOf(listOf<Log>())
 
@@ -184,8 +184,6 @@ fun mainView(
                 }
             }
         }
-
-
         Row(
             Modifier
                 .fillMaxWidth(),
@@ -196,22 +194,24 @@ fun mainView(
                 colors = defaultButtonColor,
                 modifier = buttonModifier,
                 onClick = {
+                    val settings = ConnectionSettings(
+                        credentialType = CredentialType.valueOf(selectedCredential),
+                        serverUrl = serverUrl,
+                        accessKey = accessKey,
+                        secretKey = secretKey,
+                        sessionKey = sessionKey,
+                        serverRegion = Regions.valueOf(selectedRegion)
+                    )
+                    FileHandleService().createConfigFile(settings)
                     Thread {
                         connecting = true
                         connectionService = ConnectionService(
-                            connectionSettings = ConnectionSettings(
-                                serverUrl = serverUrl,
-                                accessKey = accessKey,
-                                secretKey = secretKey,
-                                sessionKey = sessionKey,
-                                serverRegion = selectedRegion
-                            ),
-                            credentialType = CredentialType.valueOf(selectedCredential),
-                            logService = logService
+                            connectionSettings = settings,
+                            communicationService = communicationService
                         )
                         queues = GenericSqsService(
                             connectionService = requireNotNull(connectionService) { "SQS service not connected" },
-                            logService = logService
+                            communicationService = communicationService
                         ).getQueues()
                     }.start()
                 }) {
@@ -250,9 +250,10 @@ fun mainView(
             ) {
                 items(systemLog) { logMessage ->
                     val color = when (logMessage.type) {
-                        LogType.INFO -> Color.Gray
-                        LogType.WARN -> Color.Yellow
-                        LogType.ERROR -> Color.Red
+                        LogTypeEnum.INFO -> Color.Gray
+                        LogTypeEnum.WARN -> Color.Yellow
+                        LogTypeEnum.ERROR -> Color.Red
+                        LogTypeEnum.SUCCESS -> Color.Green
                     }
                     Column(
                         Modifier.padding(5.dp)
@@ -285,7 +286,7 @@ fun mainView(
             defaultTextField(
                 modifier = Modifier.clickable {
                     if (connectionService != null) {
-                        queues = GenericSqsService(connectionService!!, logService).getQueues()
+                        queues = GenericSqsService(connectionService!!, communicationService).getQueues()
                     }
                     expandedToSend = !expandedToSend
                 },
@@ -328,7 +329,7 @@ fun mainView(
                 colors = defaultButtonColor,
                 onClick = {
                     Thread {
-                        GenericSqsService(connectionService!!, logService).send(selectedUrlToSend, message, 1)
+                        GenericSqsService(connectionService!!, communicationService).send(selectedUrlToSend, message, 1)
                     }.start()
                 }
             ) {
@@ -344,7 +345,7 @@ fun mainView(
             defaultTextField(
                 modifier = Modifier.clickable {
                     if (connectionService != null) {
-                        queues = GenericSqsService(connectionService!!, logService).getQueues()
+                        queues = GenericSqsService(connectionService!!, communicationService).getQueues()
                     }
                     expandedToReceive = !expandedToReceive
                 },
@@ -447,7 +448,7 @@ fun mainView(
                 colors = defaultButtonColor,
                 onClick = {
                     Thread {
-                        val result = GenericSqsService(connectionService!!, logService)
+                        val result = GenericSqsService(connectionService!!, communicationService)
                             .receive(queueUrl = selectedUrlToReceive, consume = deleteMessage)
                         receivedMessages = result
                     }.start()
@@ -471,7 +472,7 @@ fun mainView(
         }
     }
 
-    if (systemLog.size != logService.systemLog.size) {
-        systemLog = logService.systemLog.map { it }.reversed()
+    if (systemLog.size != communicationService.systemLog.size) {
+        systemLog = communicationService.systemLog.map { it }.reversed()
     }
 }

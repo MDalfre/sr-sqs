@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "ma.dalfre"
-version = "1.1.1"
+version = "1.2.1"
 
 repositories {
     mavenCentral()
@@ -53,6 +53,17 @@ compose.desktop {
                 iconFile.set(project.file("src/main/resources/icon.ico"))
             }
             linux {
+                modules(
+                    "java.instrument",
+                    "java.management",
+                    "java.naming",
+                    "java.security.jgss",
+                    "java.sql",
+                    "jdk.unsupported"
+                )
+                iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))
+            }
+            macOS{
                 modules(
                     "java.instrument",
                     "java.management",

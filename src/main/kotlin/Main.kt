@@ -4,20 +4,19 @@ import androidx.compose.desktop.Window
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
-import commons.backgroundBlue
+import commons.DefaultColors.backgroundBlue
 import components.mainView
 import components.topBar
 import service.ConnectionService
-import service.LogService
+import service.CommunicationService
+import service.FileHandleService
 
 const val DEFAULT_WIDTH = 1280
 const val DEFAULT_HEIGHT = 790
-val logService: LogService = LogService()
+val communicationService: CommunicationService = CommunicationService()
 var connectionService: ConnectionService? = null
 
 fun main() = Window(
@@ -25,14 +24,16 @@ fun main() = Window(
     size = IntSize(DEFAULT_WIDTH, DEFAULT_HEIGHT),
     resizable = true
 ) {
+    val configHandler = FileHandleService().readConfigFile()
+
     MaterialTheme {
         Row(
             Modifier.background(backgroundBlue)
         ) {
-            mainView(logService)
+            mainView(communicationService, configHandler)
         }
         Column {
-            topBar(logService)
+            topBar(communicationService)
         }
     }
 }

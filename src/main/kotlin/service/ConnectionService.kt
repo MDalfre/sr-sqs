@@ -3,28 +3,25 @@ package service
 import com.amazonaws.SdkClientException
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.client.builder.AwsClientBuilder
-import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder
 import model.ConnectionSettings
-import model.CredentialType
 
 class ConnectionService(
     connectionSettings: ConnectionSettings,
-    credentialType: CredentialType,
-    private val logService: LogService
+    private val communicationService: CommunicationService
 ) {
-    private val selectedRegionName = Regions.valueOf(connectionSettings.serverRegion).getName()
+    private val selectedRegionName = connectionSettings.serverRegion.getName()
     lateinit var sqs: AmazonSQS
 
     init {
         try {
-            logService.info("Connecting SQS ...")
+            communicationService.logInfo("Connecting SQS ...")
             sqs = AmazonSQSClientBuilder
                 .standard()
                 .withCredentials(
                     AWSStaticCredentialsProvider(
-                        credentialType.credential(connectionSettings)
+                        connectionSettings.credentialType.credential(connectionSettings)
                     )
                 )
                 .withEndpointConfiguration(
@@ -34,17 +31,18 @@ class ConnectionService(
                     )
                 )
                 .build()
+            communicationService.logSuccess("AWS Connected")
         } catch (ex: SdkClientException) {
-            logService.error(ex.message)
+            communicationService.logError(ex.message)
         }
     }
 
     fun disconnect() {
         try {
-            logService.info("Disconnecting from server")
+            communicationService.logInfo("Disconnecting from server")
             sqs.shutdown()
         } catch (ex: SdkClientException) {
-            logService.error(ex.message)
+            communicationService.logError(ex.message)
             throw ex
         }
     }
