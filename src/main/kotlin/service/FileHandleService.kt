@@ -1,11 +1,13 @@
 package service
 
 import com.amazonaws.regions.Regions
+import com.amazonaws.services.sqs.model.Message
 import model.ConnectionSettings
 import model.CredentialType
 import model.Queue
 import java.io.File
 import java.io.FileInputStream
+import java.time.LocalDateTime
 import java.util.Properties
 
 const val CREDENTIAL_TYPE = "selectedCredential"
@@ -93,5 +95,20 @@ class FileHandleService {
             sessionKey = "docker",
             serverRegion = Regions.US_EAST_1
         )
+    }
+
+    fun dumpMessageToFile(messageList: List<Message>, communicationService: CommunicationService) {
+        val filename = "dump-${LocalDateTime.now().nano}.srsqs"
+        File(filename).printWriter().use { out ->
+            messageList.forEach {
+                out.println("${it.body} //")
+            }
+        }
+        communicationService.logSuccess(filename)
+        communicationService.logSuccess("Messages dumped to file")
+    }
+
+    fun importFile(file: String): String {
+        return FileInputStream(file).reader(Charsets.UTF_8).readText()
     }
 }

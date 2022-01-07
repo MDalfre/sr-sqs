@@ -1,5 +1,6 @@
 package components
 
+import androidx.compose.desktop.ComposeWindow
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,8 +49,8 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.model.Message
 import commons.DefaultColors.backgroundBlue
 import commons.DefaultColors.lightBlue
-import commons.objectToJson
 import commons.DefaultColors.orange
+import commons.objectToJson
 import connectionService
 import model.ConnectionSettings
 import model.CredentialType
@@ -60,6 +61,7 @@ import service.CommunicationService
 import service.ConnectionService
 import service.FileHandleService
 import service.GenericSqsService
+import java.io.FilenameFilter
 
 const val ALERT_WIDTH = 600
 const val ALERT_HEIGHT = 450
@@ -99,7 +101,8 @@ fun mainView(
     var deleteMessage by remember { mutableStateOf(true) }
     var queues by remember { mutableStateOf(listOf<Queue>()) }
     var receivedMessages by remember { mutableStateOf(listOf<Message>()) }
-    val listState = rememberLazyListState()
+    val listStateLog = rememberLazyListState()
+    val listStateMessages = rememberLazyListState()
     var serverUrl by remember { mutableStateOf(connectionSettings.serverUrl) }
     var accessKey by remember { mutableStateOf(connectionSettings.accessKey) }
     var secretKey by remember { mutableStateOf(connectionSettings.secretKey) }
@@ -246,7 +249,7 @@ fun mainView(
                     .height(250.dp)
                     .border(0.5.dp, color = lightBlue, shape = RoundedCornerShape(5.dp))
                     .height(30.dp),
-                state = listState,
+                state = listStateLog,
             ) {
                 items(systemLog) { logMessage ->
                     val color = when (logMessage.type) {
@@ -335,6 +338,24 @@ fun mainView(
             ) {
                 Text("Produce Message")
             }
+            Button(
+                modifier = buttonModifier,
+                enabled = connecting && (selectedQueueToSend != " "),
+                colors = defaultButtonColor,
+                onClick = {
+                    communicationService.logInfo("Importing file ...")
+                    val filePicker = java.awt.FileDialog(ComposeWindow())
+                    filePicker.filenameFilter = FilenameFilter { _, name -> name.endsWith(".srsqs") }
+                    filePicker.isVisible = true
+                    val file = "${filePicker.directory}${filePicker.file}"
+                    if (filePicker.file != null) {
+                        message = FileHandleService().importFile(file)
+                        communicationService.logSuccess("Imported: ${filePicker.file}")
+                    }
+                }
+            ) {
+                Text("Import")
+            }
         }
     }
     /* Right Column */
@@ -387,7 +408,8 @@ fun mainView(
                     .height(580.dp)
                     .border(0.5.dp, color = lightBlue, shape = RoundedCornerShape(5.dp))
                     .height(30.dp),
-                state = listState,
+                state = listStateMessages
+
             ) {
                 items(receivedMessages) {
                     Card(
@@ -456,6 +478,18 @@ fun mainView(
             ) {
                 Text("Consume Messages")
             }
+            Button(
+                modifier = buttonModifier,
+                enabled = receivedMessages.isNotEmpty(),
+                colors = defaultButtonColor,
+                onClick = {
+                    Thread {
+                        FileHandleService().dumpMessageToFile(receivedMessages, communicationService)
+                    }.start()
+                }
+            ) {
+                Text("Dump")
+            }
             Row(modifier = Modifier.padding(all = 1.dp).height(60.dp)) {
                 Checkbox(
                     modifier = buttonModifier.padding(all = 2.dp),
@@ -463,7 +497,7 @@ fun mainView(
                     onCheckedChange = { deleteMessage = !deleteMessage },
                 )
                 Text(
-                    text = "Delete message",
+                    text = "Delete messages",
                     modifier = Modifier.padding(top = 15.dp),
                     style = TextStyle(fontSize = 13.sp),
                     color = lightBlue
