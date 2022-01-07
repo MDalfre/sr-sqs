@@ -7,6 +7,7 @@ import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.QueueAttributeName
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.SendMessageRequest
+import commons.Constants.DEFAULT_WAIT_INTERVAL
 import model.ProcessStatusEnum
 import model.Queue
 
@@ -70,31 +71,31 @@ class GenericSqsService(
 
     fun receive(queueUrl: String, consume: Boolean, log: Boolean = true): MutableList<Message> {
         val queueResponse: MutableList<Message> = mutableListOf()
-        try {
-            if (log) {
-                communicationService.logInfo("Fetching Queue")
-            }
+        if (log) {
+            communicationService.logInfo("Fetching Queue ...")
+        }
+        do {
             val receiveMessageRequest = ReceiveMessageRequest(queueUrl)
                 .withWaitTimeSeconds(WAIT_TIME_SECONDS)
                 .withMaxNumberOfMessages(MAX_NUMBER_OF_MESSAGES)
 
-            val sqsMessages: MutableList<Message>? =
+            val sqsMessages: MutableList<Message> =
                 connectionService.sqs.receiveMessage(receiveMessageRequest).messages
 
-            sqsMessages?.forEach {
+            sqsMessages.forEach {
                 queueResponse.add(it)
                 if (consume) {
                     connectionService.sqs.deleteMessage(queueUrl, it.receiptHandle)
                 }
             }
-            if (log) {
-                communicationService.logSuccess("Listing last ${queueResponse.size} messages")
-            }
-            return queueResponse
-        } catch (ex: AmazonSQSException) {
-            communicationService.logError(ex.message)
-            throw ex
+
+            Thread.sleep(DEFAULT_WAIT_INTERVAL)
+
+        } while (sqsMessages.size > 0)
+        if (log) {
+            communicationService.logSuccess("Listing last ${queueResponse.size} messages")
         }
+        return queueResponse
     }
 
     fun createQueue(queueNme: String) {
