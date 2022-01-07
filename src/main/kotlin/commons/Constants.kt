@@ -6,4 +6,5 @@ object Constants {
     const val DEFAULT_LOADING_START = 0f
     const val DEFAULT_LOADING_RANGE_START = 100f
     const val DEFAULT_LOADING_RANGE_END = 1000f
+    const val DEFAULT_WAIT_INTERVAL = 100L
 }
