@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import commons.DefaultColors.lightBlue
+import commons.DefaultColors.secondaryColor
 
 @Composable
 fun defaultTextField(
@@ -32,7 +32,7 @@ fun defaultTextField(
             text = text,
             modifier = Modifier.padding(start = 3.dp),
             style = TextStyle(fontSize = 13.sp),
-            color = lightBlue
+            color = secondaryColor
         )
         BasicTextField(
             value = value,
@@ -45,7 +45,7 @@ fun defaultTextField(
                 Column(
                     modifier
                         .fillMaxWidth()
-                        .border(0.5.dp, color = lightBlue, shape = RoundedCornerShape(5.dp))
+                        .border(0.5.dp, color = secondaryColor, shape = RoundedCornerShape(5.dp))
                         .height(30.dp)
                         .padding(5.dp)
                 ) {
@@ -70,7 +70,7 @@ fun defaultTextEditor(
             text = text,
             modifier = Modifier.padding(start = 3.dp),
             style = TextStyle(fontSize = 13.sp),
-            color = lightBlue
+            color = secondaryColor
         )
         BasicTextField(
             value = value,
@@ -82,7 +82,7 @@ fun defaultTextEditor(
                 Column(
                     modifier
                         .fillMaxWidth()
-                        .border(0.5.dp, color = lightBlue, shape = RoundedCornerShape(5.dp))
+                        .border(0.5.dp, color = secondaryColor, shape = RoundedCornerShape(5.dp))
                         .height(30.dp)
                         .padding(5.dp)
                 ) {

@@ -34,9 +34,9 @@ import commons.Constants.DEFAULT_LOADING_RANGE_START
 import commons.Constants.DEFAULT_LOADING_START
 import commons.Constants.DEFAULT_TIME_INTERVAL
 import commons.Constants.ZERO
-import commons.DefaultColors.backgroundBlue
-import commons.DefaultColors.lightBlue
-import commons.DefaultColors.orange
+import commons.DefaultColors.backgroundColor
+import commons.DefaultColors.secondaryColor
+import commons.DefaultColors.buttonColor
 import commons.Util.toPercentage
 import model.ProcessStatusEnum
 import model.Queue
@@ -49,7 +49,7 @@ import service.GenericSqsService
 fun dlqReprocess(connectionService: ConnectionService, communicationService: CommunicationService) {
 
     val buttonModifier = Modifier.padding(10.dp)
-    val defaultButtonColor = ButtonDefaults.buttonColors(backgroundColor = orange, contentColor = Color.Black)
+    val defaultButtonColor = ButtonDefaults.buttonColors(backgroundColor = buttonColor, contentColor = Color.Black)
 
     var queues by remember { mutableStateOf(listOf<Queue>()) }
     var selectedSourceQueue by remember { mutableStateOf(" ") }
@@ -66,7 +66,7 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
     var completedMessage by remember { mutableStateOf("") }
 
     Column(
-        modifier = Modifier.background(backgroundBlue)
+        modifier = Modifier.background(backgroundColor)
             .fillMaxSize(),
     ) {
         Column(
@@ -118,7 +118,7 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
                         text = "Source queue approximated item count: $sourceQueueSize",
                         modifier = Modifier.padding(top = 5.dp),
                         style = TextStyle(fontSize = 13.sp),
-                        color = lightBlue
+                        color = secondaryColor
                     )
                 }
             }
@@ -168,7 +168,7 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
                         text = "Dispatch delay: ${timeInterval.toLong()} ms",
                         modifier = Modifier.padding(top = 5.dp),
                         style = TextStyle(fontSize = 13.sp),
-                        color = lightBlue
+                        color = secondaryColor
                     )
                 }
             }
@@ -182,8 +182,8 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
                         onValueChange = { timeInterval = it },
                         value = timeInterval,
                         colors = SliderDefaults.colors(
-                            thumbColor = orange,
-                            activeTrackColor = lightBlue
+                            thumbColor = buttonColor,
+                            activeTrackColor = secondaryColor
                         )
                     )
                 }
@@ -197,7 +197,7 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
                         text = "${loading.toPercentage()}%",
                         modifier = Modifier,
                         style = TextStyle(fontSize = 13.sp),
-                        color = lightBlue
+                        color = secondaryColor
                     )
                 }
             }
@@ -209,7 +209,7 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
                     LinearProgressIndicator(
                         modifier = Modifier.fillMaxWidth().height(50.dp).padding(20.dp),
                         progress = loading,
-                        color = orange
+                        color = buttonColor
                     )
                 }
             }

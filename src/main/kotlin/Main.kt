@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntSize
-import commons.DefaultColors.backgroundBlue
+import commons.DefaultColors.backgroundColor
 import components.mainView
 import components.topBar
 import service.ConnectionService
@@ -28,7 +28,7 @@ fun main() = Window(
 
     MaterialTheme {
         Row(
-            Modifier.background(backgroundBlue)
+            Modifier.background(backgroundColor)
         ) {
             mainView(communicationService, configHandler)
         }

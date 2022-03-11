@@ -1,7 +1,9 @@
 package components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Divider
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.v1.Dialog
 import androidx.compose.ui.window.v1.DialogProperties
+import commons.DefaultColors
 import connectionService
 import service.CommunicationService
 import service.FileHandleService
@@ -42,7 +45,7 @@ fun topBar(communicationService: CommunicationService) {
         modifier = Modifier.height(30.dp),
         backgroundColor = Color.Black
     ) {
-        Row {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Icon(
                 imageVector = Icons.Default.Menu,
                 "Menu",
@@ -114,6 +117,12 @@ fun topBar(communicationService: CommunicationService) {
                     }
                 )
             }
+            Text(
+                text = "v2.0.0",
+                modifier = Modifier.padding(top = 7.dp),
+                style = TextStyle(fontSize = 13.sp),
+                color = DefaultColors.tintColor
+            )
         }
     }
 }
