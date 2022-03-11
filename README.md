@@ -1,4 +1,4 @@
-![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/master/.github/images/logo.png)
+![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/main/.github/images/logo.png)
 
 # Description
 
@@ -19,6 +19,6 @@ SR-SQS is able to act as a generic consumer, producer and mock responses, to ens
 
 # ScreenShot
 
-![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/master/.github/images/prtsc1.jpeg)
-![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/master/.github/images/prtsc2.jpeg)
-![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/master/.github/images/prtsc3.jpeg)
+![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/main/.github/images/prtsc1.jpeg)
+![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/main/.github/images/prtsc2.jpeg)
+![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/main/.github/images/prtsc3.jpeg)
