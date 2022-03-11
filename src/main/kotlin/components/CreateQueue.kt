@@ -19,8 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import commons.DefaultColors.backgroundBlue
-import commons.DefaultColors.orange
+import commons.DefaultColors.backgroundColor
+import commons.DefaultColors.buttonColor
 import service.CommunicationService
 import service.ConnectionService
 import service.GenericSqsService
@@ -30,12 +30,12 @@ import service.GenericSqsService
 fun createQueue(connectionService: ConnectionService, communicationService: CommunicationService) {
 
     val buttonModifier = Modifier.padding(10.dp)
-    val defaultButtonColor = ButtonDefaults.buttonColors(backgroundColor = orange, contentColor = Color.Black)
+    val defaultButtonColor = ButtonDefaults.buttonColors(backgroundColor = buttonColor, contentColor = Color.Black)
 
     var createQueueName by remember { mutableStateOf("") }
 
     Column(
-        modifier = Modifier.background(backgroundBlue)
+        modifier = Modifier.background(backgroundColor)
             .fillMaxSize(),
     ) {
         Column(

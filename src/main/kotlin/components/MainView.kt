@@ -28,6 +28,7 @@ import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -47,9 +48,9 @@ import androidx.compose.ui.window.v1.Dialog
 import androidx.compose.ui.window.v1.DialogProperties
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.model.Message
-import commons.DefaultColors.backgroundBlue
-import commons.DefaultColors.lightBlue
-import commons.DefaultColors.orange
+import commons.DefaultColors.backgroundColor
+import commons.DefaultColors.buttonColor
+import commons.DefaultColors.secondaryColor
 import commons.objectToJson
 import connectionService
 import model.ConnectionSettings
@@ -57,10 +58,12 @@ import model.CredentialType
 import model.Log
 import model.LogTypeEnum
 import model.Queue
+import model.SqsMock
 import service.CommunicationService
 import service.ConnectionService
 import service.FileHandleService
 import service.GenericSqsService
+import service.MockSqsService
 import java.io.FilenameFilter
 
 const val ALERT_WIDTH = 600
@@ -77,13 +80,20 @@ fun mainView(
     /** States **/
     /* Styles */
     val buttonModifier = Modifier.padding(10.dp)
-    val defaultButtonColor = ButtonDefaults.buttonColors(backgroundColor = orange, contentColor = Color.Black)
+    val defaultButtonColor = ButtonDefaults.buttonColors(backgroundColor = buttonColor, contentColor = Color.Black)
 
     /* DropDownMenu */
     var expandedToSend by remember { mutableStateOf(false) }
     var expandedToReceive by remember { mutableStateOf(false) }
     var expandedRegion by remember { mutableStateOf(false) }
     var expandedCredential by remember { mutableStateOf(false) }
+    var expandedMockSource by remember { mutableStateOf(false) }
+    var expandedMockTarget by remember { mutableStateOf(false) }
+    var mockServiceRunning by remember { mutableStateOf(false) }
+    var selectedMockQueueSource by remember { mutableStateOf(" ") }
+    var selectedMockQueueTarget by remember { mutableStateOf(" ") }
+    var selectedMockUrlSource by remember { mutableStateOf("") }
+    var selectedMockUrlTarget by remember { mutableStateOf("") }
     var selectedQueueToSend by remember { mutableStateOf(" ") }
     var selectedQueueToReceive by remember { mutableStateOf(" ") }
     var selectedUrlToSend by remember { mutableStateOf("") }
@@ -99,8 +109,10 @@ fun mainView(
     /* Button&TextFields */
     var connecting by remember { mutableStateOf(false) }
     var deleteMessage by remember { mutableStateOf(true) }
+    var mockMode by remember { mutableStateOf(false) }
     var queues by remember { mutableStateOf(listOf<Queue>()) }
     var receivedMessages by remember { mutableStateOf(listOf<Message>()) }
+    var mockList by remember { mutableStateOf(listOf<SqsMock>()) }
     val listStateLog = rememberLazyListState()
     val listStateMessages = rememberLazyListState()
     var serverUrl by remember { mutableStateOf(connectionSettings.serverUrl) }
@@ -108,6 +120,8 @@ fun mainView(
     var secretKey by remember { mutableStateOf(connectionSettings.secretKey) }
     var sessionKey by remember { mutableStateOf(connectionSettings.sessionKey) }
     var message by remember { mutableStateOf("") }
+    var sourceMessage by remember { mutableStateOf("*") }
+    var targetMessage by remember { mutableStateOf("") }
     var systemLog by mutableStateOf(listOf<Log>())
 
     /** End of States **/
@@ -233,6 +247,23 @@ fun mainView(
                 Text("Disconnect")
             }
         }
+        Row(
+            Modifier
+                .fillMaxWidth().border(0.5.dp, color = secondaryColor, shape = RoundedCornerShape(5.dp)),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Text(
+                text = "Mock Mode:",
+                modifier = Modifier.padding(top = 7.dp),
+                style = TextStyle(fontSize = 13.sp),
+                color = secondaryColor
+            )
+            Switch(
+                modifier = Modifier.padding(top = 3.dp, bottom = 3.dp),
+                checked = mockMode,
+                onCheckedChange = { mockMode = !mockMode }
+            )
+        }
         /** System log **/
         Column(
             modifier = Modifier.padding(top = 10.dp)
@@ -241,13 +272,13 @@ fun mainView(
                 text = "System log",
                 modifier = Modifier.padding(start = 3.dp),
                 style = TextStyle(fontSize = 13.sp),
-                color = lightBlue
+                color = secondaryColor
             )
             LazyColumn(
                 Modifier
                     .fillMaxWidth()
                     .height(250.dp)
-                    .border(0.5.dp, color = lightBlue, shape = RoundedCornerShape(5.dp))
+                    .border(0.5.dp, color = secondaryColor, shape = RoundedCornerShape(5.dp))
                     .height(30.dp),
                 state = listStateLog,
             ) {
@@ -264,7 +295,7 @@ fun mainView(
                         CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
                             Text(logMessage.message, style = MaterialTheme.typography.caption, color = color)
                         }
-                        Divider(color = lightBlue)
+                        Divider(color = secondaryColor)
                     }
                 }
             }
@@ -273,7 +304,7 @@ fun mainView(
                     .align(Alignment.Start)
             ) {
                 Image(
-                    imageResource("logo.png"),
+                    imageResource("logo2.png"),
                     contentDescription = "SR SQS",
                     alignment = Alignment.BottomStart
                 )
@@ -281,230 +312,429 @@ fun mainView(
         }
         /** System log end **/
     }
-    /* Center Column */
-    Column(
-        modifier = Modifier.width(450.dp).padding(top = 25.dp)
-    ) {
-        Row {
-            defaultTextField(
-                modifier = Modifier.clickable {
-                    if (connectionService != null) {
-                        queues = GenericSqsService(connectionService!!, communicationService).getQueues()
-                    }
-                    expandedToSend = !expandedToSend
-                },
-                text = "Queues",
-                value = selectedQueueToSend,
-                onValueChange = { selectedQueueToSend = it }
-            )
-            DropdownMenu(
-                modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp),
-                expanded = expandedToSend,
-                onDismissRequest = { expandedToSend = false },
-            ) {
-                queues.forEach { queueName ->
-                    DropdownMenuItem(
-                        modifier = Modifier.padding(5.dp).height(15.dp),
-                        onClick = {
-                            selectedQueueToSend = queueName.name
-                            selectedUrlToSend = queueName.url
-                            expandedToSend = !expandedToSend
-                        }
-                    ) {
-                        Text(text = queueName.name, style = TextStyle(fontSize = 12.sp))
-                    }
-                }
-            }
-        }
-        defaultTextEditor(
-            modifier = Modifier.height(580.dp),
-            text = "Send Message",
-            value = message,
-            onValueChange = { message = it },
-        )
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                modifier = buttonModifier,
-                enabled = connecting && (selectedQueueToSend != " "),
-                colors = defaultButtonColor,
-                onClick = {
-                    Thread {
-                        GenericSqsService(connectionService!!, communicationService).send(selectedUrlToSend, message, 1)
-                    }.start()
-                }
-            ) {
-                Text("Produce Message")
-            }
-            Button(
-                modifier = buttonModifier,
-                enabled = connecting && (selectedQueueToSend != " "),
-                colors = defaultButtonColor,
-                onClick = {
-                    communicationService.logInfo("Importing file ...")
-                    val filePicker = java.awt.FileDialog(ComposeWindow())
-                    filePicker.filenameFilter = FilenameFilter { _, name -> name.endsWith(".srsqs") }
-                    filePicker.isVisible = true
-                    val file = "${filePicker.directory}${filePicker.file}"
-                    if (filePicker.file != null) {
-                        message = FileHandleService().importFile(file)
-                        communicationService.logSuccess("Imported: ${filePicker.file}")
-                    }
-                }
-            ) {
-                Text("Import")
-            }
-        }
-    }
-    /* Right Column */
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 25.dp)
-    ) {
-        Row {
-            defaultTextField(
-                modifier = Modifier.clickable {
-                    if (connectionService != null) {
-                        queues = GenericSqsService(connectionService!!, communicationService).getQueues()
-                    }
-                    expandedToReceive = !expandedToReceive
-                },
-                text = "Queues",
-                value = selectedQueueToReceive,
-                onValueChange = { selectedQueueToReceive = it }
-            )
-            DropdownMenu(
-                modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp),
-                expanded = expandedToReceive,
-                onDismissRequest = { expandedToReceive = false },
-            ) {
-                queues.forEach { queueName ->
-                    DropdownMenuItem(
-                        modifier = Modifier.padding(5.dp).height(15.dp),
-                        onClick = {
-                            selectedQueueToReceive = queueName.name
-                            selectedUrlToReceive = queueName.url
-                            expandedToReceive = !expandedToReceive
-                        }
-                    ) {
-                        Text(text = queueName.name, style = TextStyle(fontSize = 12.sp))
-                    }
-                }
-            }
-        }
+
+    if (mockMode == false) {
+        /* Center Column */
         Column(
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier.width(450.dp).padding(top = 25.dp)
+        ) {
+            Row {
+                defaultTextField(
+                    modifier = Modifier.clickable {
+                        if (connectionService != null) {
+                            queues = GenericSqsService(connectionService!!, communicationService).getQueues()
+                        }
+                        expandedToSend = !expandedToSend
+                    },
+                    text = "Queues",
+                    value = selectedQueueToSend,
+                    onValueChange = { selectedQueueToSend = it }
+                )
+                DropdownMenu(
+                    modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp),
+                    expanded = expandedToSend,
+                    onDismissRequest = { expandedToSend = false },
+                ) {
+                    queues.forEach { queueName ->
+                        DropdownMenuItem(
+                            modifier = Modifier.padding(5.dp).height(15.dp),
+                            onClick = {
+                                selectedQueueToSend = queueName.name
+                                selectedUrlToSend = queueName.url
+                                expandedToSend = !expandedToSend
+                            }
+                        ) {
+                            Text(text = queueName.name, style = TextStyle(fontSize = 12.sp))
+                        }
+                    }
+                }
+            }
+            defaultTextEditor(
+                modifier = Modifier.height(580.dp),
+                text = "Send Message",
+                value = message,
+                onValueChange = { message = it },
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    modifier = buttonModifier,
+                    enabled = connecting && (selectedQueueToSend != " "),
+                    colors = defaultButtonColor,
+                    onClick = {
+                        Thread {
+                            GenericSqsService(connectionService!!, communicationService).send(
+                                selectedUrlToSend,
+                                message,
+                                1
+                            )
+                        }.start()
+                    }
+                ) {
+                    Text("Produce Message")
+                }
+                Button(
+                    modifier = buttonModifier,
+                    enabled = connecting && (selectedQueueToSend != " "),
+                    colors = defaultButtonColor,
+                    onClick = {
+                        communicationService.logInfo("Importing file ...")
+                        val filePicker = java.awt.FileDialog(ComposeWindow())
+                        filePicker.filenameFilter = FilenameFilter { _, name -> name.endsWith(".srsqs") }
+                        filePicker.isVisible = true
+                        val file = "${filePicker.directory}${filePicker.file}"
+                        if (filePicker.file != null) {
+                            message = FileHandleService().importFile(file)
+                            communicationService.logSuccess("Imported: ${filePicker.file}")
+                        }
+                    }
+                ) {
+                    Text("Import")
+                }
+            }
+        }
+        /* Right Column */
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 25.dp)
+        ) {
+            Row {
+                defaultTextField(
+                    modifier = Modifier.clickable {
+                        if (connectionService != null) {
+                            queues = GenericSqsService(connectionService!!, communicationService).getQueues()
+                        }
+                        expandedToReceive = !expandedToReceive
+                    },
+                    text = "Queues",
+                    value = selectedQueueToReceive,
+                    onValueChange = { selectedQueueToReceive = it }
+                )
+                DropdownMenu(
+                    modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp),
+                    expanded = expandedToReceive,
+                    onDismissRequest = { expandedToReceive = false },
+                ) {
+                    queues.forEach { queueName ->
+                        DropdownMenuItem(
+                            modifier = Modifier.padding(5.dp).height(15.dp),
+                            onClick = {
+                                selectedQueueToReceive = queueName.name
+                                selectedUrlToReceive = queueName.url
+                                expandedToReceive = !expandedToReceive
+                            }
+                        ) {
+                            Text(text = queueName.name, style = TextStyle(fontSize = 12.sp))
+                        }
+                    }
+                }
+            }
+            Column(
+                modifier = Modifier.padding(top = 10.dp)
+            ) {
+                Text(
+                    text = "Received Messages",
+                    modifier = Modifier.padding(start = 3.dp),
+                    style = TextStyle(fontSize = 13.sp),
+                    color = secondaryColor
+                )
+                LazyColumn(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(580.dp)
+                        .border(0.5.dp, color = secondaryColor, shape = RoundedCornerShape(5.dp))
+                        .height(30.dp),
+                    state = listStateMessages
+
+                ) {
+                    items(receivedMessages) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
+                                .clickable {
+                                    titleAlert = it.messageId
+                                    bodyAlert = it.objectToJson() ?: "Fail to serialize"
+                                    showAlert = true
+                                },
+                            backgroundColor = secondaryColor,
+                            elevation = 10.dp
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(5.dp)
+                            ) {
+                                Text("id: ${it.messageId}")
+                                CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+                                    Text(it.body, style = MaterialTheme.typography.body2)
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+            if (showAlert) {
+                Dialog(
+                    onDismissRequest = { showAlert = !showAlert },
+                    properties = DialogProperties(title = "MessageId: $titleAlert", IntSize(ALERT_WIDTH, ALERT_HEIGHT)),
+                    content = {
+                        Column(
+                            Modifier.background(backgroundColor).fillMaxSize()
+                        ) {
+                            Column(
+                                Modifier.padding(16.dp).background(backgroundColor)
+                            ) {
+                                defaultTextEditor(
+                                    modifier = Modifier.height(300.dp),
+                                    text = "SQS message details",
+                                    value = bodyAlert,
+                                    onValueChange = {},
+                                )
+                            }
+                        }
+                    }
+                )
+            }
+            Row(
+                Modifier
+                    .fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    modifier = buttonModifier,
+                    enabled = connecting && (selectedQueueToReceive != " "),
+                    colors = defaultButtonColor,
+                    onClick = {
+                        Thread {
+                            val result = GenericSqsService(connectionService!!, communicationService)
+                                .receive(queueUrl = selectedUrlToReceive, consume = deleteMessage)
+                            receivedMessages = result
+                        }.start()
+                    }
+                ) {
+                    Text("Consume Messages")
+                }
+                Button(
+                    modifier = buttonModifier,
+                    enabled = receivedMessages.isNotEmpty(),
+                    colors = defaultButtonColor,
+                    onClick = {
+                        Thread {
+                            FileHandleService().dumpMessageToFile(receivedMessages, communicationService)
+                        }.start()
+                    }
+                ) {
+                    Text("Dump")
+                }
+                Row(modifier = Modifier.padding(all = 1.dp).height(60.dp)) {
+                    Checkbox(
+                        modifier = buttonModifier.padding(all = 2.dp),
+                        checked = deleteMessage,
+                        onCheckedChange = { deleteMessage = !deleteMessage },
+                    )
+                    Text(
+                        text = "Delete messages",
+                        modifier = Modifier.padding(top = 15.dp),
+                        style = TextStyle(fontSize = 13.sp),
+                        color = secondaryColor
+                    )
+                }
+            }
+        }
+    } else {
+        /* Mock Mode */
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 16.dp, top = 35.dp)
         ) {
             Text(
-                text = "Received Messages",
+                text = "Mock List",
                 modifier = Modifier.padding(start = 3.dp),
                 style = TextStyle(fontSize = 13.sp),
-                color = lightBlue
+                color = secondaryColor
             )
             LazyColumn(
                 Modifier
                     .fillMaxWidth()
-                    .height(580.dp)
-                    .border(0.5.dp, color = lightBlue, shape = RoundedCornerShape(5.dp))
+                    .height(280.dp)
+                    .border(0.5.dp, color = secondaryColor, shape = RoundedCornerShape(5.dp))
                     .height(30.dp),
                 state = listStateMessages
 
             ) {
-                items(receivedMessages) {
+                items(mockList) {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp)
-                            .clickable {
-                                titleAlert = it.messageId
-                                bodyAlert = it.objectToJson() ?: "Fail to serialize"
-                                showAlert = true
-                            },
-                        backgroundColor = lightBlue,
+                            .padding(start = 5.dp, end = 5.dp, top = 5.dp, bottom = 5.dp),
+                        backgroundColor = secondaryColor,
                         elevation = 10.dp
                     ) {
                         Column(
                             modifier = Modifier.padding(5.dp)
                         ) {
-                            Text("id: ${it.messageId}")
+                            Text("Awaiting on: ${it.sourceQueue.substringAfterLast("/")}")
+                            Text("Respond on: ${it.targetQueue.substringAfterLast("/")}")
                             CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                                Text(it.body, style = MaterialTheme.typography.body2)
+                                Text("Awaiting for: ${it.messageToWait}", style = MaterialTheme.typography.body2)
+                                Text("Response: ${it.mockResponse}", style = MaterialTheme.typography.body2)
                             }
                         }
 
                     }
                 }
             }
-        }
-        if (showAlert) {
-            Dialog(
-                onDismissRequest = { showAlert = !showAlert },
-                properties = DialogProperties(title = "MessageId: $titleAlert", IntSize(ALERT_WIDTH, ALERT_HEIGHT)),
-                content = {
-                    Column(
-                        Modifier.background(backgroundBlue).fillMaxSize()
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Column(
+                    modifier = Modifier.width(450.dp).padding(start = 16.dp, end = 16.dp, top = 10.dp)
+                )
+                {
+                    defaultTextField(
+                        modifier = Modifier.clickable {
+                            if (connectionService != null) {
+                                queues = GenericSqsService(connectionService!!, communicationService).getQueues()
+                            }
+                            expandedMockSource = !expandedMockSource
+                        }.width(450.dp),
+                        text = "Await on:",
+                        value = selectedMockQueueSource,
+                        onValueChange = { selectedMockQueueSource = it }
+                    )
+                    DropdownMenu(
+                        modifier = Modifier.width(420.dp).heightIn(10.dp, 200.dp),
+                        expanded = expandedMockSource,
+                        onDismissRequest = { expandedMockSource = false },
                     ) {
-                        Column(
-                            Modifier.padding(16.dp).background(backgroundBlue)
-                        ) {
-                            defaultTextEditor(
-                                modifier = Modifier.height(300.dp),
-                                text = "SQS message details",
-                                value = bodyAlert,
-                                onValueChange = {},
-                            )
+                        queues.forEach { queueName ->
+                            DropdownMenuItem(
+                                modifier = Modifier.padding(5.dp).height(15.dp),
+                                onClick = {
+                                    selectedMockQueueSource = queueName.name
+                                    selectedMockUrlSource = queueName.url
+                                    expandedMockSource = !expandedMockSource
+                                }
+                            ) {
+                                Text(text = queueName.name, style = TextStyle(fontSize = 12.sp))
+                            }
                         }
                     }
+
                 }
-            )
-        }
-        Row(
-            Modifier
-                .fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(
-                modifier = buttonModifier,
-                enabled = connecting && (selectedQueueToReceive != " "),
-                colors = defaultButtonColor,
-                onClick = {
-                    Thread {
-                        val result = GenericSqsService(connectionService!!, communicationService)
-                            .receive(queueUrl = selectedUrlToReceive, consume = deleteMessage)
-                        receivedMessages = result
-                    }.start()
+                Column(
+                    modifier = Modifier.width(450.dp).padding(start = 16.dp, end = 16.dp, top = 10.dp)
+                ) {
+                    defaultTextField(
+                        modifier = Modifier.clickable {
+                            if (connectionService != null) {
+                                queues = GenericSqsService(connectionService!!, communicationService).getQueues()
+                            }
+                            expandedMockTarget = !expandedMockTarget
+                        }.width(450.dp),
+                        text = "Mock response:",
+                        value = selectedMockQueueTarget,
+                        onValueChange = { selectedMockQueueTarget = it }
+                    )
+                    DropdownMenu(
+                        modifier = Modifier.width(420.dp).heightIn(10.dp, 200.dp),
+                        expanded = expandedMockTarget,
+                        onDismissRequest = { expandedMockTarget = false },
+                    ) {
+                        queues.forEach { queueName ->
+                            DropdownMenuItem(
+                                modifier = Modifier.padding(5.dp).height(15.dp),
+                                onClick = {
+                                    selectedMockQueueTarget = queueName.name
+                                    selectedMockUrlTarget = queueName.url
+                                    expandedMockTarget = !expandedMockTarget
+                                }
+                            ) {
+                                Text(text = queueName.name, style = TextStyle(fontSize = 12.sp))
+                            }
+                        }
+                    }
+
                 }
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text("Consume Messages")
-            }
-            Button(
-                modifier = buttonModifier,
-                enabled = receivedMessages.isNotEmpty(),
-                colors = defaultButtonColor,
-                onClick = {
-                    Thread {
-                        FileHandleService().dumpMessageToFile(receivedMessages, communicationService)
-                    }.start()
+                Column(
+                    modifier = Modifier.width(450.dp).padding(start = 16.dp, end = 16.dp, top = 25.dp)
+                ) {
+                    Row {
+                        defaultTextEditor(
+                            modifier = Modifier.height(200.dp),
+                            text = "Wait for:",
+                            value = sourceMessage,
+                            onValueChange = { sourceMessage = it },
+                        )
+                    }
+
                 }
-            ) {
-                Text("Dump")
+                Column(
+                    modifier = Modifier.width(450.dp).padding(start = 16.dp, end = 16.dp, top = 25.dp)
+                ) {
+                    Row {
+                        defaultTextEditor(
+                            modifier = Modifier.height(200.dp),
+                            text = "Response message:",
+                            value = targetMessage,
+                            onValueChange = { targetMessage = it },
+                        )
+                    }
+                }
             }
-            Row(modifier = Modifier.padding(all = 1.dp).height(60.dp)) {
-                Checkbox(
-                    modifier = buttonModifier.padding(all = 2.dp),
-                    checked = deleteMessage,
-                    onCheckedChange = { deleteMessage = !deleteMessage },
-                )
-                Text(
-                    text = "Delete messages",
-                    modifier = Modifier.padding(top = 15.dp),
-                    style = TextStyle(fontSize = 13.sp),
-                    color = lightBlue
-                )
+            Row(
+                Modifier
+                    .fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    modifier = buttonModifier,
+                    enabled = connecting && (selectedMockQueueSource != " "),
+                    colors = defaultButtonColor,
+                    onClick = {
+                        mockList = mockList.plus(
+                            SqsMock(
+                                sourceQueue = selectedMockUrlSource,
+                                targetQueue = selectedMockUrlTarget,
+                                messageToWait = sourceMessage.trim(),
+                                mockResponse = targetMessage.trim()
+                            )
+                        )
+                    }
+                ) {
+                    Text("Create Mock")
+                }
+                Button(
+                    modifier = buttonModifier,
+                    enabled = (mockList.isNotEmpty()),
+                    colors = defaultButtonColor,
+                    onClick = {
+                        mockServiceRunning = !mockServiceRunning
+                        MockSqsService(connectionService!!, communicationService).startMockService(mockList)
+                    }
+                ) {
+                    Text("Start Mock")
+                }
+                Button(
+                    modifier = buttonModifier,
+                    enabled = mockServiceRunning,
+                    colors = defaultButtonColor,
+                    onClick = {
+                        MockSqsService(connectionService!!, communicationService).stopMockService()
+                    }
+                ) {
+                    Text("Stop Mock")
+                }
             }
         }
+
     }
+
+
 
     if (systemLog.size != communicationService.systemLog.size) {
         systemLog = communicationService.systemLog.map { it }.reversed()

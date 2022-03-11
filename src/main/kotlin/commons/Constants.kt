@@ -7,4 +7,6 @@ object Constants {
     const val DEFAULT_LOADING_RANGE_START = 100f
     const val DEFAULT_LOADING_RANGE_END = 1000f
     const val DEFAULT_WAIT_INTERVAL = 100L
+    const val DEFAULT_WAIT_WILDCARD = "*"
+    const val DEFAULT_MOCK_INTERVAL = 200L
 }

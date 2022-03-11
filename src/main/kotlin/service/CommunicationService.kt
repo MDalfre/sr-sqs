@@ -8,6 +8,7 @@ class CommunicationService {
     val systemLog = mutableListOf<Log>()
     var messageCounter = 1
     var reprocessingDql = ProcessStatusEnum.NOT_STARTED
+    var mockService = ProcessStatusEnum.NOT_STARTED
 
     fun logInfo(message: String) {
         systemLog.add(

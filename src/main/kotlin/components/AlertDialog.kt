@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.v1.Dialog
-import commons.DefaultColors.backgroundBlue
+import commons.DefaultColors.backgroundColor
 
 
 @Composable
@@ -22,7 +22,7 @@ fun defaultDialog(
         onDismissRequest = {},
         content = {
             Column(
-                modifier = Modifier.background(backgroundBlue),
+                modifier = Modifier.background(backgroundColor),
             ) {
                 Text(title)
                 CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {

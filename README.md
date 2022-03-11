@@ -2,7 +2,7 @@
 
 # Description
 
-Simple generic Amazon SQS client designed to make asynchronous applications that uses SQS queues simple to test.
+Simple generic Amazon SQS client and mock, designed to make asynchronous applications that uses SQS queues simple to test.
 
 - List all queues;
 - Produce (Send) messages;
@@ -11,9 +11,11 @@ Simple generic Amazon SQS client designed to make asynchronous applications that
 - Create Queue;
 - Create configuration file for AWS LocalStack;
 - Multi-message send ( separator "//" );
-- Reprocess DLQ queues.
+- Reprocess DLQ queues;
+- New Mock Mode ( Allow creation of mock response for queue);
+- New theme color.
 
-SR-SQS is able to act as a generic consumer and producer to ensure your application workflow is running well.
+SR-SQS is able to act as a generic consumer, producer and mock responses, to ensure your application workflow is running well.
 
 # ScreenShot
 
