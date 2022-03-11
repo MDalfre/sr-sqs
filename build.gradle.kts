@@ -9,8 +9,10 @@ plugins {
     id("io.gitlab.arturbosch.detekt").version("1.18.0-RC3")
 }
 
+var lastAppVersion = "2.0.0"
+
 group = "ma.dalfre"
-version = "1.3.1"
+version = lastAppVersion
 
 repositories {
     mavenCentral()
@@ -38,7 +40,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "sr-sqs"
-            packageVersion = "1.3.1"
+            packageVersion = lastAppVersion
             windows {
                 console = false
                 menuGroup = "Sr Sqs"
@@ -63,7 +65,7 @@ compose.desktop {
                 )
                 iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))
             }
-            macOS{
+            macOS {
                 modules(
                     "java.instrument",
                     "java.management",
