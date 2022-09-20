@@ -1,5 +1,6 @@
 package service
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import commons.Constants.DEFAULT_MOCK_INTERVAL
 import commons.Constants.DEFAULT_WAIT_WILDCARD
 import model.ProcessStatusEnum
@@ -11,6 +12,7 @@ class MockSqsService(
 ) {
 
     private val genericSqsService = GenericSqsService(connectionService, communicationService)
+    private val mapper = jacksonObjectMapper()
 
     fun startMockService(mockList: List<SqsMock>) {
         communicationService.mockService = ProcessStatusEnum.STARTED
@@ -30,8 +32,8 @@ class MockSqsService(
         genericSqsService.receive(queueUrl = sqsMock.sourceQueue, consume = true, log = false).let { messageList ->
             messageList.map { it.body }.forEach { body ->
                 when (sqsMock.messageToWait) {
-                    body.trim() -> sendMock(sqsMock)
-                    DEFAULT_WAIT_WILDCARD -> sendMock(sqsMock)
+                    body.trim() -> sendMock(sqsMock, body)
+                    DEFAULT_WAIT_WILDCARD -> sendMock(sqsMock, body)
                 }
             }
         }
@@ -41,8 +43,38 @@ class MockSqsService(
         }
     }
 
-    private fun sendMock(sqsMock: SqsMock) {
+    private fun sendMock(sqsMock: SqsMock, receivedMessage: String) {
         communicationService.logInfo("Sending mock to ${sqsMock.targetQueue}")
-        genericSqsService.send(queueUrl = sqsMock.targetQueue, message = sqsMock.mockResponse, delay = 1, log = false)
+        val newSqsMock = replaceValuesInNodes(sqsMock,receivedMessage)
+        genericSqsService.send(queueUrl = newSqsMock.targetQueue, message = newSqsMock.mockResponse, delay = 1, log = false)
+    }
+
+    private fun getResponseFields(message: String): MutableList<String> {
+        val pattern = "%(.*?)%".toPattern()
+        val matcher = pattern.matcher(message)
+        val foundList = mutableListOf<String>()
+        while (matcher.find()) {
+            foundList.add(matcher.group().trim())
+        }
+        return foundList
+    }
+
+    private fun findValueInNode(wantedList: MutableList<String>, receivedMessage: String): MutableMap<String, Any> {
+        val mappedReplaces = mutableMapOf<String, Any>()
+        wantedList.forEach {
+            mappedReplaces[it] = mapper.readTree(receivedMessage)
+                .findValue(it.removePrefix("%").removeSuffix("%"))
+        }
+        return mappedReplaces
+    }
+
+    private fun replaceValuesInNodes(sqsMock: SqsMock, receivedMessage: String): SqsMock {
+        val wantedList = getResponseFields(sqsMock.mockResponse)
+        val mappedValues = findValueInNode(wantedList, receivedMessage)
+        var mockResponse = sqsMock.mockResponse
+        mappedValues.forEach {
+            mockResponse = mockResponse.replace(it.key, it.value.toString())
+        }
+        return sqsMock.copy(mockResponse = mockResponse)
     }
 }
