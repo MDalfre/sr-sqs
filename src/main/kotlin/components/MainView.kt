@@ -1,6 +1,5 @@
 package components
 
-import androidx.compose.desktop.ComposeWindow
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,8 +14,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -26,10 +25,13 @@ import androidx.compose.material.ContentAlpha
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.Icon
 import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Switch
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -38,19 +40,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.v1.Dialog
-import androidx.compose.ui.window.v1.DialogProperties
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.rememberDialogState
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.model.Message
 import commons.DefaultColors.backgroundColor
 import commons.DefaultColors.buttonColor
 import commons.DefaultColors.secondaryColor
+import commons.Util
 import commons.objectToJson
 import connectionService
 import model.ConnectionSettings
@@ -134,7 +137,7 @@ fun mainView(
         Row {
             defaultTextField(
                 modifier = Modifier.clickable { expandedCredential = !expandedCredential },
-                text = "Credential Type",
+                text = "Credential Type1",
                 value = selectedCredential,
                 onValueChange = { selectedCredential = it }
             )
@@ -220,6 +223,7 @@ fun mainView(
                         serverRegion = Regions.valueOf(selectedRegion)
                     )
                     FileHandleService().createConfigFile(settings)
+
                     Thread {
                         connecting = true
                         connectionService = ConnectionService(
@@ -304,7 +308,7 @@ fun mainView(
                     .align(Alignment.Start)
             ) {
                 Image(
-                    imageResource("logo2.png"),
+                    Util.appLogo(),
                     contentDescription = "SR SQS",
                     alignment = Alignment.BottomStart
                 )
@@ -476,8 +480,10 @@ fun mainView(
             }
             if (showAlert) {
                 Dialog(
-                    onDismissRequest = { showAlert = !showAlert },
-                    properties = DialogProperties(title = "MessageId: $titleAlert", IntSize(ALERT_WIDTH, ALERT_HEIGHT)),
+                    onCloseRequest = { showAlert = !showAlert },
+                    title = "MessageId: $titleAlert",
+                    state = rememberDialogState(size = DpSize(ALERT_WIDTH.dp, ALERT_HEIGHT.dp)),
+                    icon = Util.appIcon(),
                     content = {
                         Column(
                             Modifier.background(backgroundColor).fillMaxSize()
@@ -573,14 +579,24 @@ fun mainView(
                         Column(
                             modifier = Modifier.padding(5.dp)
                         ) {
+
                             Text("Awaiting on: ${it.sourceQueue.substringAfterLast("/")}")
                             Text("Respond on: ${it.targetQueue.substringAfterLast("/")}")
                             CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
                                 Text("Awaiting for: ${it.messageToWait}", style = MaterialTheme.typography.body2)
                                 Text("Response: ${it.mockResponse}", style = MaterialTheme.typography.body2)
+                                Row(
+                                    modifier = Modifier.align(Alignment.End)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        "Menu",
+                                        tint = Color.Black,
+                                        modifier = Modifier.clickable { mockList = mockList.minus(it) }
+                                    )
+                                }
                             }
                         }
-
                     }
                 }
             }
@@ -710,7 +726,7 @@ fun mainView(
                 }
                 Button(
                     modifier = buttonModifier,
-                    enabled = (mockList.isNotEmpty()),
+                    enabled = (mockList.isNotEmpty() && !mockServiceRunning),
                     colors = defaultButtonColor,
                     onClick = {
                         mockServiceRunning = !mockServiceRunning
@@ -724,6 +740,7 @@ fun mainView(
                     enabled = mockServiceRunning,
                     colors = defaultButtonColor,
                     onClick = {
+                        mockServiceRunning = !mockServiceRunning
                         MockSqsService(connectionService!!, communicationService).stopMockService()
                     }
                 ) {
@@ -733,8 +750,6 @@ fun mainView(
         }
 
     }
-
-
 
     if (systemLog.size != communicationService.systemLog.size) {
         systemLog = communicationService.systemLog.map { it }.reversed()
