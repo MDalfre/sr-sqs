@@ -22,12 +22,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.v1.Dialog
-import androidx.compose.ui.window.v1.DialogProperties
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.rememberDialogState
 import commons.DefaultColors
+import commons.Util
 import connectionService
 import service.CommunicationService
 import service.FileHandleService
@@ -95,8 +96,10 @@ fun topBar(communicationService: CommunicationService) {
 
             if (createQueue) {
                 Dialog(
-                    onDismissRequest = { createQueue = !createQueue },
-                    properties = DialogProperties(title = "Create Queue", IntSize(ALERT_WIDTH, ALERT_SMALL_HEIGHT)),
+                    onCloseRequest = { createQueue = !createQueue },
+                    title = "Create Queue",
+                    state = rememberDialogState(size = DpSize(ALERT_WIDTH.dp, ALERT_SMALL_HEIGHT.dp)),
+                    icon = Util.appIcon(),
                     content = {
                         createQueue(
                             connectionService = connectionService!!,
@@ -107,8 +110,10 @@ fun topBar(communicationService: CommunicationService) {
             }
             if (reprocess) {
                 Dialog(
-                    onDismissRequest = { reprocess = !reprocess },
-                    properties = DialogProperties(title = "Reprocess DLQ", IntSize(ALERT_WIDTH, ALERT_HEIGHT)),
+                    onCloseRequest = { reprocess = !reprocess },
+                    title = "Reprocess DLQ",
+                    state = rememberDialogState(size = DpSize(ALERT_WIDTH.dp, ALERT_HEIGHT.dp)),
+                    icon = Util.appIcon(),
                     content = {
                         dlqReprocess(
                             connectionService = connectionService!!,
@@ -118,7 +123,7 @@ fun topBar(communicationService: CommunicationService) {
                 )
             }
             Text(
-                text = "v2.0.0",
+                text = "v2.1.2",
                 modifier = Modifier.padding(top = 7.dp),
                 style = TextStyle(fontSize = 13.sp),
                 color = DefaultColors.tintColor

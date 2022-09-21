@@ -25,6 +25,7 @@ class MockSqsService(
     }
 
     fun stopMockService() {
+        communicationService.logInfo("Stopping mock for all queues")
         communicationService.mockService = ProcessStatusEnum.NOT_STARTED
     }
 
@@ -46,7 +47,12 @@ class MockSqsService(
     private fun sendMock(sqsMock: SqsMock, receivedMessage: String) {
         communicationService.logInfo("Sending mock to ${sqsMock.targetQueue}")
         val newSqsMock = replaceValuesInNodes(sqsMock,receivedMessage)
-        genericSqsService.send(queueUrl = newSqsMock.targetQueue, message = newSqsMock.mockResponse, delay = 1, log = false)
+        genericSqsService.send(
+            queueUrl = newSqsMock.targetQueue,
+            message = newSqsMock.mockResponse,
+            delay = 1,
+            log = false
+        )
     }
 
     private fun getResponseFields(message: String): MutableList<String> {
