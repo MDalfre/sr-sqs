@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -40,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.DpSize
@@ -50,6 +49,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.rememberDialogState
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.model.Message
+import commons.Constants.DEFAULT_MAX_CHARACTER
 import commons.DefaultColors.backgroundColor
 import commons.DefaultColors.buttonColor
 import commons.DefaultColors.secondaryColor
@@ -58,7 +58,6 @@ import commons.objectToJson
 import connectionService
 import model.ConnectionSettings
 import model.CredentialType
-import model.Log
 import model.LogTypeEnum
 import model.Queue
 import model.SqsMock
@@ -67,7 +66,6 @@ import service.ConnectionService
 import service.FileHandleService
 import service.GenericSqsService
 import service.MockSqsService
-import java.io.FilenameFilter
 
 const val ALERT_WIDTH = 600
 const val ALERT_HEIGHT = 450
@@ -125,7 +123,6 @@ fun mainView(
     var message by remember { mutableStateOf("") }
     var sourceMessage by remember { mutableStateOf("*") }
     var targetMessage by remember { mutableStateOf("") }
-    var systemLog by mutableStateOf(listOf<Log>())
 
     /** End of States **/
 
@@ -286,7 +283,7 @@ fun mainView(
                     .height(30.dp),
                 state = listStateLog,
             ) {
-                items(systemLog) { logMessage ->
+                items(communicationService.systemLog.asReversed()) { logMessage ->
                     val color = when (logMessage.type) {
                         LogTypeEnum.INFO -> Color.Gray
                         LogTypeEnum.WARN -> Color.Yellow
@@ -326,7 +323,7 @@ fun mainView(
                 defaultTextField(
                     modifier = Modifier.clickable {
                         if (connectionService != null) {
-                            queues = GenericSqsService(connectionService!!, communicationService).getQueues()
+                            queues = GenericSqsService(connectionService!!, communicationService).getQueues(log = false)
                         }
                         expandedToSend = !expandedToSend
                     },
@@ -384,15 +381,7 @@ fun mainView(
                     enabled = connecting && (selectedQueueToSend != " "),
                     colors = defaultButtonColor,
                     onClick = {
-                        communicationService.logInfo("Importing file ...")
-                        val filePicker = java.awt.FileDialog(ComposeWindow())
-                        filePicker.filenameFilter = FilenameFilter { _, name -> name.endsWith(".srsqs") }
-                        filePicker.isVisible = true
-                        val file = "${filePicker.directory}${filePicker.file}"
-                        if (filePicker.file != null) {
-                            message = FileHandleService().importFile(file)
-                            communicationService.logSuccess("Imported: ${filePicker.file}")
-                        }
+                        message = FileHandleService().importMessage()
                     }
                 ) {
                     Text("Import")
@@ -407,7 +396,7 @@ fun mainView(
                 defaultTextField(
                     modifier = Modifier.clickable {
                         if (connectionService != null) {
-                            queues = GenericSqsService(connectionService!!, communicationService).getQueues()
+                            queues = GenericSqsService(connectionService!!, communicationService).getQueues(log = false)
                         }
                         expandedToReceive = !expandedToReceive
                     },
@@ -583,8 +572,13 @@ fun mainView(
                             Text("Awaiting on: ${it.sourceQueue.substringAfterLast("/")}")
                             Text("Respond on: ${it.targetQueue.substringAfterLast("/")}")
                             CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                                Text("Awaiting for: ${it.messageToWait}", style = MaterialTheme.typography.body2)
-                                Text("Response: ${it.mockResponse}", style = MaterialTheme.typography.body2)
+                                Text(
+                                    "Awaiting for: ${it.messageToWait.take(DEFAULT_MAX_CHARACTER)}",
+                                    style = MaterialTheme.typography.body2
+                                )
+                                Text(
+                                    "Response: ${it.mockResponse.take(DEFAULT_MAX_CHARACTER)}",
+                                    style = MaterialTheme.typography.body2)
                                 Row(
                                     modifier = Modifier.align(Alignment.End)
                                 ) {
@@ -610,7 +604,8 @@ fun mainView(
                     defaultTextField(
                         modifier = Modifier.clickable {
                             if (connectionService != null) {
-                                queues = GenericSqsService(connectionService!!, communicationService).getQueues()
+                                queues = GenericSqsService(connectionService!!, communicationService)
+                                    .getQueues(log = false)
                             }
                             expandedMockSource = !expandedMockSource
                         }.width(450.dp),
@@ -644,7 +639,8 @@ fun mainView(
                     defaultTextField(
                         modifier = Modifier.clickable {
                             if (connectionService != null) {
-                                queues = GenericSqsService(connectionService!!, communicationService).getQueues()
+                                queues = GenericSqsService(connectionService!!, communicationService)
+                                    .getQueues(log = false)
                             }
                             expandedMockTarget = !expandedMockTarget
                         }.width(450.dp),
@@ -720,6 +716,10 @@ fun mainView(
                                 mockResponse = targetMessage.trim()
                             )
                         )
+                        sourceMessage = "*"
+                        targetMessage = ""
+                        selectedMockQueueTarget = " "
+                        selectedMockQueueSource = " "
                     }
                 ) {
                     Text("Create Mock")
@@ -746,12 +746,23 @@ fun mainView(
                 ) {
                     Text("Stop Mock")
                 }
+                Button(
+                    modifier = buttonModifier,
+                    enabled = connecting,
+                    colors = defaultButtonColor,
+                    onClick = {
+                        val currentQueues = GenericSqsService(
+                            connectionService = requireNotNull(connectionService) { "SQS service not connected" },
+                            communicationService = communicationService
+                        ).getQueues(log = false)
+                        val mockFile = FileHandleService().importSqsMock(currentQueues)
+                        mockList = mockList.plus(mockFile)
+                    }
+                ) {
+                    Text("Import")
+                }
             }
         }
 
-    }
-
-    if (systemLog.size != communicationService.systemLog.size) {
-        systemLog = communicationService.systemLog.map { it }.reversed()
     }
 }

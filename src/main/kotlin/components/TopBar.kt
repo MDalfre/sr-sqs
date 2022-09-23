@@ -123,7 +123,7 @@ fun topBar(communicationService: CommunicationService) {
                 )
             }
             Text(
-                text = "v2.1.2",
+                text = "v2.1.3",
                 modifier = Modifier.padding(top = 7.dp),
                 style = TextStyle(fontSize = 13.sp),
                 color = DefaultColors.tintColor

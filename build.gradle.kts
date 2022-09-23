@@ -9,7 +9,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt").version("1.18.0-RC3")
 }
 
-var lastAppVersion = "2.1.2"
+var lastAppVersion = "2.1.3"
 
 group = "ma.dalfre"
 version = lastAppVersion
@@ -45,33 +45,18 @@ compose.desktop {
                 console = false
                 menuGroup = "Sr Sqs"
                 modules(
-                    "java.instrument",
-                    "java.management",
-                    "java.naming",
-                    "java.security.jgss",
-                    "java.sql",
                     "jdk.unsupported"
                 )
                 iconFile.set(project.file("src/main/resources/icon.ico"))
             }
             linux {
                 modules(
-                    "java.instrument",
-                    "java.management",
-                    "java.naming",
-                    "java.security.jgss",
-                    "java.sql",
                     "jdk.unsupported"
                 )
                 iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))
             }
             macOS {
                 modules(
-                    "java.instrument",
-                    "java.management",
-                    "java.naming",
-                    "java.security.jgss",
-                    "java.sql",
                     "jdk.unsupported"
                 )
                 iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))
