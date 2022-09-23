@@ -17,6 +17,26 @@ Simple generic Amazon SQS client and mock, designed to make asynchronous applica
 
 SR-SQS is able to act as a generic consumer, producer and mock responses, to ensure your application workflow is running well.
 
+## Json mock example
+```json
+{
+  "mockList": [
+    {
+      "sourceQueue": "some-test-queue",
+      "targetQueue": "another-test-queue",
+      "messageToWait": "*",
+      "mockResponse": "{\"status\":\"SUCCESS\"}"
+    },
+    {
+      "sourceQueue": "monday-test-queue",
+      "targetQueue": "friday-test-queue",
+      "messageToWait": "*",
+      "mockResponse": "{\"status\":\"SUCCESS\"}"
+    }
+  ]
+}
+```
+
 # ScreenShot
 
 ![alt text](https://raw.githubusercontent.com/MDalfre/sr-sqs/master/.github/images/prtsc1.jpeg)

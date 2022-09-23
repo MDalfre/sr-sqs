@@ -42,10 +42,12 @@ class GenericSqsService(
         }
     }
 
-    fun getQueues(): MutableList<Queue> {
+    fun getQueues(log: Boolean = true): List<Queue> {
         val queueResponse: MutableList<Queue> = mutableListOf()
         try {
-            communicationService.logInfo("Retrieving queues")
+            if (log) {
+                communicationService.logInfo("Retrieving queues ...")
+            }
             connectionService.sqs.listQueues().queueUrls.forEach {
                 queueResponse.add(
                     Queue(
@@ -54,7 +56,7 @@ class GenericSqsService(
                     )
                 )
             }
-            return queueResponse
+            return queueResponse.sortedBy { it.name }
         } catch (ex: SdkClientException) {
             println(ex.message)
             communicationService.logError(ex.message)
