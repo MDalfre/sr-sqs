@@ -1,12 +1,17 @@
 package service
 
+import androidx.compose.ui.awt.ComposeWindow
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.sqs.model.Message
+import commons.jsonToObject
 import model.ConnectionSettings
 import model.CredentialType
 import model.Queue
+import model.SqsMock
+import model.SqsMockList
 import java.io.File
 import java.io.FileInputStream
+import java.io.FilenameFilter
 import java.time.LocalDateTime
 import java.util.Properties
 
@@ -110,5 +115,49 @@ class FileHandleService {
 
     fun importFile(file: String): String {
         return FileInputStream(file).reader(Charsets.UTF_8).readText()
+    }
+
+    fun importSqsMock(currentQueues: List<Queue>): List<SqsMock> {
+        val filePicker = java.awt.FileDialog(ComposeWindow())
+        filePicker.filenameFilter = FilenameFilter { _, name -> name.endsWith(".json") }
+        filePicker.isVisible = true
+        val file = "${filePicker.directory}${filePicker.file}"
+        if (filePicker.file != null) {
+            val mockList = mutableListOf<SqsMock>()
+            importMock(file).mockList.forEach { sqsMock ->
+                val sourceUrl = currentQueues.find { it.name == sqsMock.sourceQueue }?.url ?: "QueueNotFound"
+                val targetUrl = currentQueues.find { it.name == sqsMock.targetQueue }?.url ?: "QueueNotFound"
+                mockList.add(
+                    SqsMock(
+                        sourceQueue = sourceUrl,
+                        targetQueue = targetUrl,
+                        messageToWait = sqsMock.messageToWait,
+                        mockResponse = sqsMock.mockResponse
+                    )
+                )
+            }
+            return mockList
+
+        } else {
+            return emptyList()
+        }
+    }
+
+    fun importMock(mockFile: String): SqsMockList {
+        val json = File(mockFile).readText(Charsets.UTF_8)
+        return json.jsonToObject()
+
+    }
+
+    fun importMessage(): String {
+        val filePicker = java.awt.FileDialog(ComposeWindow())
+        filePicker.filenameFilter = FilenameFilter { _, name -> name.endsWith(".srsqs") }
+        filePicker.isVisible = true
+        val file = "${filePicker.directory}${filePicker.file}"
+        return if (filePicker.file != null) {
+            FileHandleService().importFile(file)
+        } else {
+            ""
+        }
     }
 }

@@ -9,4 +9,5 @@ object Constants {
     const val DEFAULT_WAIT_INTERVAL = 100L
     const val DEFAULT_WAIT_WILDCARD = "*"
     const val DEFAULT_MOCK_INTERVAL = 200L
+    const val DEFAULT_MAX_CHARACTER = 150
 }
