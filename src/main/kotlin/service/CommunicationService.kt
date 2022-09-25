@@ -9,6 +9,7 @@ import model.ProcessStatusEnum
 
 class CommunicationService {
     var systemLog by mutableStateOf(listOf<Log>())
+    var sqsConnected by mutableStateOf(false)
     var messageCounter = 1
     var reprocessingDql = ProcessStatusEnum.NOT_STARTED
     var mockService = ProcessStatusEnum.NOT_STARTED
