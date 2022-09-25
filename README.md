@@ -13,7 +13,8 @@ Simple generic Amazon SQS client and mock, designed to make asynchronous applica
 - Multi-message send ( separator "//" );
 - Reprocess DLQ queues;
 - New Mock Mode ( Allow creation of mock response for queue);
-- New theme color.
+- New theme color;
+- MockMode: get request message field and use it at response message with placeholder ( %fieldName% )
 
 SR-SQS is able to act as a generic consumer, producer and mock responses, to ensure your application workflow is running well.
 
