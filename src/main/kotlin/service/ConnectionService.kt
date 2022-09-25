@@ -31,6 +31,8 @@ class ConnectionService(
                     )
                 )
                 .build()
+            sqs.listQueues()
+            communicationService.sqsConnected = true
             communicationService.logSuccess("AWS Connected")
         } catch (ex: SdkClientException) {
             communicationService.logError(ex.message)
@@ -39,8 +41,10 @@ class ConnectionService(
 
     fun disconnect() {
         try {
-            communicationService.logInfo("Disconnecting from server")
+            communicationService.logInfo("Disconnecting from server ...")
             sqs.shutdown()
+            communicationService.sqsConnected = false
+            communicationService.logWarn("Disconnected from AWS")
         } catch (ex: SdkClientException) {
             communicationService.logError(ex.message)
             throw ex

@@ -33,10 +33,11 @@ import connectionService
 import service.CommunicationService
 import service.FileHandleService
 import service.GenericSqsService
+import service.VariableStore
 
 @Suppress("LongMethod")
 @Composable
-fun topBar(communicationService: CommunicationService) {
+fun topBar(communicationService: CommunicationService, variableStore: VariableStore) {
 
     var expanded by remember { mutableStateOf(false) }
     var reprocess by remember { mutableStateOf(false) }
@@ -123,7 +124,7 @@ fun topBar(communicationService: CommunicationService) {
                 )
             }
             Text(
-                text = "v2.1.3",
+                text = variableStore.version,
                 modifier = Modifier.padding(top = 7.dp),
                 style = TextStyle(fontSize = 13.sp),
                 color = DefaultColors.tintColor

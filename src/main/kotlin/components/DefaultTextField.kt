@@ -39,7 +39,7 @@ fun defaultTextField(
             enabled = enabled,
             textStyle = TextStyle(color = Color.White),
             cursorBrush = SolidColor(Color.Gray),
-            singleLine = true,
+            singleLine = false,
             onValueChange = onValueChange,
             decorationBox = { innerTextField ->
                 Column(

@@ -9,7 +9,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt").version("1.18.0-RC3")
 }
 
-var lastAppVersion = "2.1.3"
+var lastAppVersion = "2.1.4"
 
 group = "ma.dalfre"
 version = lastAppVersion
@@ -22,8 +22,8 @@ repositories {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("com.amazonaws:aws-java-sdk:1.11.163")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.13.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.13.4")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 }
 
@@ -45,18 +45,24 @@ compose.desktop {
                 console = false
                 menuGroup = "Sr Sqs"
                 modules(
+                    "java.instrument",
+                    "java.management",
                     "jdk.unsupported"
                 )
                 iconFile.set(project.file("src/main/resources/icon.ico"))
             }
             linux {
                 modules(
+                    "java.instrument",
+                    "java.management",
                     "jdk.unsupported"
                 )
                 iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))
             }
             macOS {
                 modules(
+                    "java.instrument",
+                    "java.management",
                     "jdk.unsupported"
                 )
                 iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))
