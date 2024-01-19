@@ -1,5 +1,6 @@
 package components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -13,7 +14,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,9 +26,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
 import commons.DefaultColors
+import commons.DefaultColors.dropDownColor
 import commons.Util
 import connectionService
 import service.CommunicationService
@@ -49,12 +51,13 @@ fun topBar(communicationService: CommunicationService, variableStore: VariableSt
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Icon(
-                imageVector = Icons.Default.Menu,
-                "Menu",
+                imageVector = Icons.Default.Home,
+                contentDescription = "Menu",
                 tint = Color.White,
                 modifier = Modifier.clickable { expanded = !expanded }
             )
             DropdownMenu(
+                modifier = Modifier.background(dropDownColor),
                 expanded = expanded,
                 onDismissRequest = { expanded = !expanded }
             ) {
@@ -96,7 +99,7 @@ fun topBar(communicationService: CommunicationService, variableStore: VariableSt
             }
 
             if (createQueue) {
-                Dialog(
+                DialogWindow(
                     onCloseRequest = { createQueue = !createQueue },
                     title = "Create Queue",
                     state = rememberDialogState(size = DpSize(ALERT_WIDTH.dp, ALERT_SMALL_HEIGHT.dp)),
@@ -110,7 +113,7 @@ fun topBar(communicationService: CommunicationService, variableStore: VariableSt
                 )
             }
             if (reprocess) {
-                Dialog(
+                DialogWindow(
                     onCloseRequest = { reprocess = !reprocess },
                     title = "Reprocess DLQ",
                     state = rememberDialogState(size = DpSize(ALERT_WIDTH.dp, ALERT_HEIGHT.dp)),

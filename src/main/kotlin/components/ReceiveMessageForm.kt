@@ -33,14 +33,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
 import commons.Constants.DEFAULT_MAX_CHARACTER
 import commons.DefaultColors
+import commons.DefaultColors.dropDownColor
 import commons.Util
 import commons.prettyJson
 import connectionService
@@ -76,7 +78,7 @@ fun receiveMessageForm(variableStore: VariableStore, communicationService: Commu
                 onValueChange = { variableStore.selectedQueueToReceive = it }
             )
             DropdownMenu(
-                modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp),
+                modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp).background(dropDownColor),
                 expanded = variableStore.expandedToReceive,
                 onDismissRequest = { variableStore.expandedToReceive = false },
             ) {
@@ -138,7 +140,7 @@ fun receiveMessageForm(variableStore: VariableStore, communicationService: Commu
             }
         }
         if (showAlert) {
-            Dialog(
+            DialogWindow(
                 onCloseRequest = { showAlert = !showAlert },
                 title = "MessageId: $titleAlert",
                 state = rememberDialogState(size = DpSize(ALERT_WIDTH.dp, ALERT_HEIGHT.dp)),

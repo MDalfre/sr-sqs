@@ -8,7 +8,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder
 import model.ConnectionSettings
 
 class ConnectionService(
-    connectionSettings: ConnectionSettings,
+    private val connectionSettings: ConnectionSettings,
     private val communicationService: CommunicationService
 ) {
     private val selectedRegionName = connectionSettings.serverRegion.getName()

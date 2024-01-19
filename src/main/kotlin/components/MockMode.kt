@@ -1,5 +1,6 @@
 package components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import commons.Constants
 import commons.DefaultColors
+import commons.DefaultColors.dropDownColor
 import connectionService
 import model.SqsMock
 import model.ui.Theme
@@ -128,7 +130,7 @@ fun mockMode(variableStore: VariableStore, communicationService: CommunicationSe
                     onValueChange = { variableStore.selectedMockQueueSource = it }
                 )
                 DropdownMenu(
-                    modifier = Modifier.width(420.dp).heightIn(10.dp, 200.dp),
+                    modifier = Modifier.width(420.dp).heightIn(10.dp, 200.dp).background(dropDownColor),
                     expanded = variableStore.expandedMockSource,
                     onDismissRequest = { variableStore.expandedMockSource = false },
                 ) {
@@ -163,7 +165,7 @@ fun mockMode(variableStore: VariableStore, communicationService: CommunicationSe
                     onValueChange = { variableStore.selectedMockQueueTarget = it }
                 )
                 DropdownMenu(
-                    modifier = Modifier.width(420.dp).heightIn(10.dp, 200.dp),
+                    modifier = Modifier.width(420.dp).heightIn(10.dp, 200.dp).background(dropDownColor),
                     expanded = variableStore.expandedMockTarget,
                     onDismissRequest = { variableStore.expandedMockTarget = false },
                 ) {
