@@ -1,5 +1,6 @@
 package components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import commons.DefaultColors.dropDownColor
 import connectionService
 import model.ui.Theme
 import service.CommunicationService
@@ -49,7 +51,7 @@ fun sendMessageFrom(
                 onValueChange = { variableStore.selectedQueueToSend = it }
             )
             DropdownMenu(
-                modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp),
+                modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp).background(dropDownColor),
                 expanded = variableStore.expandedToSend,
                 onDismissRequest = { variableStore.expandedToSend = false },
             ) {

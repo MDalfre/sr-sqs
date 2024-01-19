@@ -37,6 +37,7 @@ import commons.Constants.ZERO
 import commons.DefaultColors.backgroundColor
 import commons.DefaultColors.secondaryColor
 import commons.DefaultColors.buttonColor
+import commons.DefaultColors.dropDownColor
 import commons.Util.toPercentage
 import model.ProcessStatusEnum
 import model.Queue
@@ -88,7 +89,7 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
                         onValueChange = { selectedSourceQueue = it }
                     )
                     DropdownMenu(
-                        modifier = Modifier.width(450.dp).height(100.dp),
+                        modifier = Modifier.width(450.dp).height(100.dp).background(dropDownColor),
                         expanded = expandedSourceDropbox,
                         onDismissRequest = { expandedSourceDropbox = false },
                     ) {
@@ -141,7 +142,7 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
                     )
                 }
                 DropdownMenu(
-                    modifier = Modifier.width(450.dp).height(100.dp),
+                    modifier = Modifier.width(450.dp).height(100.dp).background(dropDownColor),
                     expanded = expandedTargetDropbox,
                     onDismissRequest = { expandedTargetDropbox = false },
                 ) {

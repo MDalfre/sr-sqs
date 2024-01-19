@@ -1,5 +1,6 @@
 package components
 
+import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -13,10 +14,9 @@ import service.VariableStore
 const val ALERT_WIDTH = 700
 const val ALERT_HEIGHT = 500
 const val ALERT_SMALL_HEIGHT = 250
-const val ALERT_SMALL_WIDTH = 500
-const val ALERT_CHECK_VERSION_HEIGHT = 200
 
 @Composable
+@Preview
 fun mainView(
     communicationService: CommunicationService,
     variableStore: VariableStore,
