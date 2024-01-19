@@ -1,5 +1,7 @@
 package components
 
+import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -12,10 +14,12 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.amazonaws.regions.Regions
+import commons.DefaultColors.dropDownColor
 import connectionService
 import model.ConnectionSettings
 import model.CredentialType
@@ -28,6 +32,7 @@ import service.VariableStore
 
 @Suppress("LongMethod", "ComplexMethod")
 @Composable
+@Preview
 fun connectionForm(
     variableStore: VariableStore,
     communicationService: CommunicationService,
@@ -42,10 +47,11 @@ fun connectionForm(
             onValueChange = { variableStore.selectedCredential = it }
         )
         DropdownMenu(
+            modifier = Modifier.background(dropDownColor),
             expanded = variableStore.expandedCredential,
             onDismissRequest = { variableStore.expandedCredential = !variableStore.expandedCredential }
         ) {
-            CredentialType.values().forEach {
+            CredentialType.entries.forEach {
                 DropdownMenuItem(
                     modifier = Modifier.padding(5.dp).height(15.dp),
                     onClick = {
@@ -88,10 +94,11 @@ fun connectionForm(
             onValueChange = { variableStore.selectedRegion = it }
         )
         DropdownMenu(
+            modifier = Modifier.background(dropDownColor),
             expanded = variableStore.expandedRegion,
             onDismissRequest = { variableStore.expandedRegion = !variableStore.expandedRegion }
         ) {
-            Regions.values().forEach {
+            Regions.entries.forEach {
                 DropdownMenuItem(
                     modifier = Modifier.padding(5.dp).height(15.dp),
                     onClick = {

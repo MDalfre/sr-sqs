@@ -1,11 +1,13 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors.
 // Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,18 +21,38 @@ import commons.DefaultColors.backgroundColor
 import commons.Util.appIcon
 import components.mainView
 import components.topBar
-import components.versionCheckDialog
 import model.ui.Theme
 import service.CommunicationService
 import service.ConnectionService
 import service.VariableStore
-import service.VersionCheckService
 
 const val DEFAULT_WIDTH = 1280
 const val DEFAULT_HEIGHT = 790
 val communicationService: CommunicationService = CommunicationService()
 var connectionService: ConnectionService? = null
 val variableStore = VariableStore()
+
+@Composable
+@Preview
+fun app() {
+    val theme = Theme(
+        buttonModifier = Modifier.padding(10.dp),
+        defaultButtonColor = ButtonDefaults.buttonColors(
+            backgroundColor = DefaultColors.buttonColor,
+            contentColor = Color.Black
+        )
+    )
+    MaterialTheme {
+        Row(
+            Modifier.background(backgroundColor)
+        ) {
+            mainView(communicationService, variableStore, theme)
+        }
+        Column {
+            topBar(communicationService, variableStore)
+        }
+    }
+}
 
 fun main() = application {
     Window(
@@ -44,29 +66,6 @@ fun main() = application {
                 Alignment.Center
             )
         )
-    ) {
-        val theme = Theme(
-            buttonModifier = Modifier.padding(10.dp),
-            defaultButtonColor = ButtonDefaults.buttonColors(
-                backgroundColor = DefaultColors.buttonColor,
-                contentColor = Color.Black
-            )
-        )
-        Thread { variableStore.versionDialogOpen = VersionCheckService().checkVersion(variableStore.version) }.start()
-        MaterialTheme {
-            Row(
-                Modifier.background(backgroundColor)
-            ) {
-                mainView(communicationService, variableStore, theme)
-            }
-            Column {
-                topBar(communicationService, variableStore)
-            }
-            if (!variableStore.versionDialogOpen) {
-                versionCheckDialog(variableStore, theme)
-            }
-        }
-    }
-
+    ) { app() }
 }
 

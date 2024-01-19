@@ -1,15 +1,15 @@
-import org.jetbrains.compose.compose
+import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import io.gitlab.arturbosch.detekt.Detekt
+
 
 plugins {
-    kotlin("jvm") version "1.6.10"
-    id("org.jetbrains.compose") version "1.1.1"
+    kotlin("jvm") version "1.9.0"
+    id("org.jetbrains.compose") version "1.5.11"
     id("io.gitlab.arturbosch.detekt").version("1.18.0-RC3")
 }
 
-var lastAppVersion = "2.1.4"
+var lastAppVersion = "3.0.0"
 
 group = "ma.dalfre"
 version = lastAppVersion
@@ -27,8 +27,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 }
 
-tasks.withType<KotlinCompile>() {
-    kotlinOptions.jvmTarget = "15"
+tasks.withType<KotlinCompile> {
+    kotlinOptions.jvmTarget = "11"
 }
 tasks.withType<Detekt>().configureEach {
     jvmTarget = "1.8"
@@ -47,6 +47,9 @@ compose.desktop {
                 modules(
                     "java.instrument",
                     "java.management",
+                    "java.naming",
+                    "java.security.jgss",
+                    "java.sql",
                     "jdk.unsupported"
                 )
                 iconFile.set(project.file("src/main/resources/icon.ico"))
@@ -55,6 +58,9 @@ compose.desktop {
                 modules(
                     "java.instrument",
                     "java.management",
+                    "java.naming",
+                    "java.security.jgss",
+                    "java.sql",
                     "jdk.unsupported"
                 )
                 iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))
@@ -63,6 +69,9 @@ compose.desktop {
                 modules(
                     "java.instrument",
                     "java.management",
+                    "java.naming",
+                    "java.security.jgss",
+                    "java.sql",
                     "jdk.unsupported"
                 )
                 iconFile.set(project.file("src/main/resources/sr-sqs-icon.png"))

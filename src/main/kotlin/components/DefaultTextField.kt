@@ -26,7 +26,7 @@ fun defaultTextField(
     enabled: Boolean = true
 ) {
     Column(
-        modifier = Modifier.padding(top = 10.dp)
+        modifier = Modifier.padding(top = 10.dp, )
     ) {
         Text(
             text = text,
@@ -37,7 +37,7 @@ fun defaultTextField(
         BasicTextField(
             value = value,
             enabled = enabled,
-            textStyle = TextStyle(color = Color.White),
+            textStyle = TextStyle.Default.copy(color = Color.Gray),
             cursorBrush = SolidColor(Color.Gray),
             singleLine = false,
             onValueChange = onValueChange,

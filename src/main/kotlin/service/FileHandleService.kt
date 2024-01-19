@@ -54,14 +54,19 @@ class FileHandleService {
         val fileName = "config.cfg"
         if (File(fileName).exists()) {
             val prop = Properties()
+            val propertiesNames = listOf(
+                CREDENTIAL_TYPE,
+                SERVER_URL,
+                ACCESS_KEY,
+                SECRET_KEY,
+                SESSION_KEY,
+                REGION
+            )
+
             FileInputStream(fileName).use {
                 prop.load(it)
-                prop.getProperty(CREDENTIAL_TYPE)
-                prop.getProperty(SERVER_URL)
-                prop.getProperty(ACCESS_KEY)
-                prop.getProperty(SECRET_KEY)
-                prop.getProperty(SESSION_KEY)
-                prop.getProperty(REGION)
+                propertiesNames.forEach { propName ->  prop.getProperty(propName) }
+
                 val credentialType = prop.entries.find { properties ->
                     properties.key == CREDENTIAL_TYPE
                 }?.value.toString()
@@ -113,7 +118,7 @@ class FileHandleService {
         communicationService.logSuccess("Messages dumped to file")
     }
 
-    fun importFile(file: String): String {
+    private fun importFile(file: String): String {
         return FileInputStream(file).reader(Charsets.UTF_8).readText()
     }
 
@@ -137,13 +142,12 @@ class FileHandleService {
                 )
             }
             return mockList
-
         } else {
             return emptyList()
         }
     }
 
-    fun importMock(mockFile: String): SqsMockList {
+    private fun importMock(mockFile: String): SqsMockList {
         val json = File(mockFile).readText(Charsets.UTF_8)
         return json.jsonToObject()
 

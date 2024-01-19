@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogWindow
 import commons.DefaultColors.backgroundColor
 
 
@@ -18,7 +19,7 @@ fun defaultDialog(
     title: String,
     body: String
 ) {
-    Dialog(
+    DialogWindow(
         onCloseRequest = {},
         content = {
             Column(

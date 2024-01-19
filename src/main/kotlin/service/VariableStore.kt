@@ -10,12 +10,9 @@ import model.SqsMock
 
 class VariableStore {
 
-    val version = "v2.1.4"
+    val version = "v3.0.0"
 
     var mockMode by mutableStateOf(false)
-
-    //VersionCheckDialog
-    var versionDialogOpen by mutableStateOf(false)
 
     //ConnectionForm
     private val connectionSettings = FileHandleService().readConfigFile()
