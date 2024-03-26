@@ -56,6 +56,7 @@ class GenericSqsService(
                     )
                 )
             }
+            if (log) communicationService.logSuccess("Queues loaded successfully")
             return queueResponse.sortedBy { it.name }
         } catch (ex: SdkClientException) {
             println(ex.message)

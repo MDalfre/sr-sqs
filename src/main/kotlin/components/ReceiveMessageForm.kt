@@ -33,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -46,12 +45,16 @@ import commons.DefaultColors.dropDownColor
 import commons.Util
 import commons.prettyJson
 import connectionService
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import model.ui.Theme
 import service.CommunicationService
 import service.FileHandleService
 import service.GenericSqsService
 import service.VariableStore
 
+@OptIn(DelicateCoroutinesApi::class)
 @Suppress("LongMethod", "ComplexMethod")
 @Composable
 fun receiveMessageForm(variableStore: VariableStore, communicationService: CommunicationService, theme: Theme) {
@@ -75,7 +78,8 @@ fun receiveMessageForm(variableStore: VariableStore, communicationService: Commu
                 },
                 text = "Queues",
                 value = variableStore.selectedQueueToReceive,
-                onValueChange = { variableStore.selectedQueueToReceive = it }
+                onValueChange = { variableStore.selectedQueueToReceive = it },
+                loading = variableStore.queues.isEmpty() && variableStore.connecting
             )
             DropdownMenu(
                 modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp).background(dropDownColor),
@@ -189,14 +193,14 @@ fun receiveMessageForm(variableStore: VariableStore, communicationService: Commu
                 enabled = variableStore.connecting && (variableStore.selectedQueueToReceive != " "),
                 colors = theme.defaultButtonColor,
                 onClick = {
-                    Thread {
+                    GlobalScope.launch {
                         val result = GenericSqsService(connectionService!!, communicationService)
                             .receive(
                                 queueUrl = variableStore.selectedUrlToReceive,
                                 consume = variableStore.deleteMessage
                             )
                         variableStore.receivedMessages = result
-                    }.start()
+                    }
                 }
             ) {
                 Text("Consume Messages")
@@ -206,9 +210,9 @@ fun receiveMessageForm(variableStore: VariableStore, communicationService: Commu
                 enabled = variableStore.receivedMessages.isNotEmpty(),
                 colors = theme.defaultButtonColor,
                 onClick = {
-                    Thread {
+                    GlobalScope.launch {
                         FileHandleService().dumpMessageToFile(variableStore.receivedMessages, communicationService)
-                    }.start()
+                    }
                 }
             ) {
                 Text("Dump")
