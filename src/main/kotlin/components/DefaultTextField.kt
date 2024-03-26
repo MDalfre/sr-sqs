@@ -2,11 +2,13 @@ package components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,18 +17,21 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import commons.DefaultColors
 import commons.DefaultColors.secondaryColor
 
 @Composable
+@Suppress("LongParameterList")
 fun defaultTextField(
     modifier: Modifier = Modifier,
     text: String,
     value: String,
     onValueChange: (String) -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    loading: Boolean = false
 ) {
     Column(
-        modifier = Modifier.padding(top = 10.dp, )
+        modifier = Modifier.padding(top = 10.dp)
     ) {
         Text(
             text = text,
@@ -49,7 +54,11 @@ fun defaultTextField(
                         .height(30.dp)
                         .padding(5.dp)
                 ) {
-                    innerTextField()
+                    if (loading) {
+                        LinearProgressIndicator(color = DefaultColors.secondaryColor, modifier = Modifier.fillMaxSize())
+                    } else {
+                        innerTextField()
+                    }
                 }
             }
         )

@@ -3,6 +3,9 @@ package service
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import commons.Constants.DEFAULT_MOCK_INTERVAL
 import commons.Constants.DEFAULT_WAIT_WILDCARD
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import model.ProcessStatusEnum
 import model.SqsMock
 
@@ -14,13 +17,14 @@ class MockSqsService(
     private val genericSqsService = GenericSqsService(connectionService, communicationService)
     private val mapper = jacksonObjectMapper()
 
+    @OptIn(DelicateCoroutinesApi::class)
     fun startMockService(mockList: List<SqsMock>) {
         communicationService.mockService = ProcessStatusEnum.STARTED
         mockList.forEach {
-            Thread {
+            GlobalScope.launch {
                 communicationService.logInfo("Starting mock for ${it.targetQueue.substringAfterLast("/")}")
                 mockQueue(it)
-            }.start()
+            }
         }
     }
 
@@ -46,7 +50,7 @@ class MockSqsService(
 
     private fun sendMock(sqsMock: SqsMock, receivedMessage: String) {
         communicationService.logInfo("Sending mock to ${sqsMock.targetQueue}")
-        val newSqsMock = replaceValuesInNodes(sqsMock,receivedMessage)
+        val newSqsMock = replaceValuesInNodes(sqsMock, receivedMessage)
         genericSqsService.send(
             queueUrl = newSqsMock.targetQueue,
             message = newSqsMock.mockResponse,

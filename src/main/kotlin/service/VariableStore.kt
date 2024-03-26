@@ -10,7 +10,7 @@ import model.SqsMock
 
 class VariableStore {
 
-    val version = "v3.0.0"
+    val version = "v3.1.0"
 
     var mockMode by mutableStateOf(false)
 
@@ -53,4 +53,9 @@ class VariableStore {
     //Buttons and TextFields
     var queues by mutableStateOf(listOf<Queue>())
     var connecting by mutableStateOf(false)
+
+    //TopBar
+    var expanded by mutableStateOf(false)
+    var reprocess by mutableStateOf(false)
+    var createQueue by mutableStateOf(false)
 }

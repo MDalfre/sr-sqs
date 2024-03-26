@@ -14,13 +14,15 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.amazonaws.regions.Regions
 import commons.DefaultColors.dropDownColor
 import connectionService
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import model.ConnectionSettings
 import model.CredentialType
 import model.ui.Theme
@@ -30,6 +32,7 @@ import service.FileHandleService
 import service.GenericSqsService
 import service.VariableStore
 
+@OptIn(DelicateCoroutinesApi::class)
 @Suppress("LongMethod", "ComplexMethod")
 @Composable
 @Preview
@@ -42,7 +45,7 @@ fun connectionForm(
     Row {
         defaultTextField(
             modifier = Modifier.clickable { variableStore.expandedCredential = !variableStore.expandedCredential },
-            text = "Credential Type1",
+            text = "Credential Type",
             value = variableStore.selectedCredential,
             onValueChange = { variableStore.selectedCredential = it }
         )
@@ -131,7 +134,7 @@ fun connectionForm(
                 )
                 FileHandleService().createConfigFile(settings)
 
-                Thread {
+                GlobalScope.launch {
                     variableStore.connecting = true
                     connectionService = ConnectionService(
                         connectionSettings = settings,
@@ -144,7 +147,7 @@ fun connectionForm(
                         ).getQueues()
                     }
                     variableStore.connecting = communicationService.sqsConnected
-                }.start()
+                }
             }) {
             Text("Connect")
         }
@@ -153,10 +156,10 @@ fun connectionForm(
             colors = theme.defaultButtonColor,
             modifier = theme.buttonModifier,
             onClick = {
-                Thread {
+                GlobalScope.launch {
                     variableStore.connecting = false
                     connectionService!!.disconnect()
-                }.start()
+                }
             }) {
             Text("Disconnect")
         }

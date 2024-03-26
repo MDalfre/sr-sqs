@@ -21,13 +21,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import commons.DefaultColors.backgroundColor
 import commons.DefaultColors.buttonColor
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import service.CommunicationService
 import service.ConnectionService
 import service.GenericSqsService
+import service.VariableStore
 
+@OptIn(DelicateCoroutinesApi::class)
 @Suppress("LongMethod")
 @Composable
-fun createQueue(connectionService: ConnectionService, communicationService: CommunicationService) {
+fun createQueue(
+    connectionService: ConnectionService,
+    communicationService: CommunicationService,
+    variableStore: VariableStore
+) {
 
     val buttonModifier = Modifier.padding(10.dp)
     val defaultButtonColor = ButtonDefaults.buttonColors(backgroundColor = buttonColor, contentColor = Color.Black)
@@ -57,10 +66,11 @@ fun createQueue(connectionService: ConnectionService, communicationService: Comm
                     enabled = (createQueueName.isNotEmpty()),
                     colors = defaultButtonColor,
                     onClick = {
-                        Thread {
+                        GlobalScope.launch {
                             GenericSqsService(connectionService, communicationService)
                                 .createQueue(createQueueName)
-                        }.start()
+                            variableStore.createQueue = !variableStore.createQueue
+                        }
                     }
                 ) {
                     Text("Create Queue")

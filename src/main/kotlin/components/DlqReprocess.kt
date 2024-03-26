@@ -35,16 +35,20 @@ import commons.Constants.DEFAULT_LOADING_START
 import commons.Constants.DEFAULT_TIME_INTERVAL
 import commons.Constants.ZERO
 import commons.DefaultColors.backgroundColor
-import commons.DefaultColors.secondaryColor
 import commons.DefaultColors.buttonColor
 import commons.DefaultColors.dropDownColor
+import commons.DefaultColors.secondaryColor
 import commons.Util.toPercentage
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import model.ProcessStatusEnum
 import model.Queue
 import service.CommunicationService
 import service.ConnectionService
 import service.GenericSqsService
 
+@OptIn(DelicateCoroutinesApi::class)
 @Suppress("LongMethod", "ComplexMethod")
 @Composable
 fun dlqReprocess(connectionService: ConnectionService, communicationService: CommunicationService) {
@@ -236,14 +240,14 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
                         colors = defaultButtonColor,
                         onClick = {
                             completedMessage = ""
-                            Thread {
+                            GlobalScope.launch {
                                 GenericSqsService(connectionService, communicationService)
                                     .reprocessDlq(
                                         queueUrl = selectedTargetUrl,
                                         dlqUrl = selectedSourceUrl,
                                         delay = timeInterval.toLong()
                                     )
-                            }.start()
+                            }
                             reprocessStart = true
                             messageCounter = 1
                         }

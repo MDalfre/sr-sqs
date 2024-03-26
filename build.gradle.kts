@@ -9,7 +9,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt").version("1.18.0-RC3")
 }
 
-var lastAppVersion = "3.0.0"
+var lastAppVersion = "3.1.0"
 
 group = "ma.dalfre"
 version = lastAppVersion
@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("com.amazonaws:aws-java-sdk:1.11.163")
+    implementation("com.amazonaws:aws-java-sdk-sqs:1.11.163")
     implementation("com.fasterxml.jackson.core:jackson-core:2.13.4")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
