@@ -21,12 +21,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import commons.DefaultColors.dropDownColor
 import connectionService
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import model.ui.Theme
 import service.CommunicationService
 import service.FileHandleService
 import service.GenericSqsService
 import service.VariableStore
 
+@OptIn(DelicateCoroutinesApi::class)
 @Suppress("LongMethod", "ComplexMethod")
 @Composable
 fun sendMessageFrom(
@@ -48,7 +52,8 @@ fun sendMessageFrom(
                 },
                 text = "Queues",
                 value = variableStore.selectedQueueToSend,
-                onValueChange = { variableStore.selectedQueueToSend = it }
+                onValueChange = { variableStore.selectedQueueToSend = it },
+                loading = variableStore.queues.isEmpty() && variableStore.connecting
             )
             DropdownMenu(
                 modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp).background(dropDownColor),
@@ -84,13 +89,13 @@ fun sendMessageFrom(
                 enabled = variableStore.connecting && (variableStore.selectedQueueToSend != " "),
                 colors = theme.defaultButtonColor,
                 onClick = {
-                    Thread {
+                    GlobalScope.launch {
                         GenericSqsService(connectionService!!, communicationService).send(
                             variableStore.selectedUrlToSend,
-                            variableStore.message.replace("\n", "").replace(" ",""),
+                            variableStore.message.replace("\n", "").replace(" ", ""),
                             1
                         )
-                    }.start()
+                    }
                 }
             ) {
                 Text("Produce Message")
