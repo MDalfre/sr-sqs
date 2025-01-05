@@ -33,10 +33,43 @@ jobs:
       - name: Zip Distributable Folder
         run: zip -r sr-sqs-${{ matrix.os }}.zip build/compose/binaries/main/app
 
+  upload-release:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get latest tag version
+        id: get_tag
+        run: |
+          tag=$(git describe --tags $(git rev-list --tags --max-count=1))
+          echo "::set-output name=tag::$tag"
+
+      - name: Increment version
+        id: increment_version
+        run: |
+          tag=${{ steps.get_tag.outputs.tag }}
+          IFS='.' read -r -a parts <<< "$tag"
+          major=${parts[0]#v}
+          minor=${parts[1]}
+          patch=${parts[2]}
+          new_patch=$((patch + 1))
+          new_version="v$major.$minor.$new_patch"
+          echo "::set-output name=new_version::$new_version"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: sr-sqs-${{ matrix.os }}.zip
+
       - name: Upload Release Assets
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: 'v${{ github.run_number }}'
-          release_name: 'Release ${{ github.run_number }}'
-          assets: sr-sqs-${{ matrix.os }}.zip
+          tag: ${{ steps.increment_version.outputs.new_version }}
+          release_name: 'Release ${{ steps.increment_version.outputs.new_version }}'
+          assets: |
+            sr-sqs-ubuntu-latest.zip
+            sr-sqs-windows-latest.zip
