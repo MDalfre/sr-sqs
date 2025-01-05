@@ -32,10 +32,11 @@ jobs:
 
       - name: Zip Distributable Folder
         run: |
-          if [ "${{ runner.os }}" == "Windows" ]; then
+          if [ "${RUNNER_OS}" == "Windows" ]; then
             Compress-Archive -Path build\compose\binaries\main\app\* -DestinationPath sr-sqs-${{ matrix.os }}.zip
           else
             zip -r sr-sqs-${{ matrix.os }}.zip build/compose/binaries/main/app
+          fi
 
   upload-release:
     needs: build-and-release
