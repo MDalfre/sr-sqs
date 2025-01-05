@@ -1,0 +1,42 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-release:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for Gradle Wrapper
+        if: runner.os != 'Windows'
+        run: chmod +x ./gradlew
+
+      - name: Build Distributable
+        run: ./gradlew createDistributable
+
+      - name: Zip Distributable Folder
+        run: zip -r sr-sqs-${{ matrix.os }}.zip build/compose/binaries/main/app
+
+      - name: Upload Release Assets
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: 'v${{ github.run_number }}'
+          release_name: 'Release ${{ github.run_number }}'
+          assets: sr-sqs-${{ matrix.os }}.zip
