@@ -31,7 +31,11 @@ jobs:
         run: ./gradlew createDistributable
 
       - name: Zip Distributable Folder
-        run: zip -r sr-sqs-${{ matrix.os }}.zip build/compose/binaries/main/app
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            Compress-Archive -Path build\compose\binaries\main\app\* -DestinationPath sr-sqs-${{ matrix.os }}.zip
+          else
+            zip -r sr-sqs-${{ matrix.os }}.zip build/compose/binaries/main/app
 
   upload-release:
     needs: build-and-release
