@@ -38,6 +38,12 @@ jobs:
         if: runner.os == 'Windows'
         run: Compress-Archive -Path build\compose\binaries\main\app\* -DestinationPath sr-sqs-${{ matrix.os }}.zip
 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sr-sqs-${{ runner.os }}.zip
+          path: sr-sqs-${{ runner.os }}.zip
+
   upload-release:
     needs: build-and-release
     runs-on: ubuntu-latest
@@ -49,32 +55,33 @@ jobs:
       - name: Get latest tag version
         id: get_tag
         run: |
-          tag=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "::set-output name=tag::$tag"
+          if git describe --tags --abbrev=0 2>/dev/null; then
+            tag=$(git describe --tags --abbrev=0)
+          else
+            tag="v0.0.0"
+          fi
+          echo "tag=$tag" >> $GITHUB_OUTPUT
 
       - name: Increment version
         id: increment_version
         run: |
-          tag=${{ steps.get_tag.outputs.tag }}
-          IFS='.' read -r -a parts <<< "$tag"
-          major=${parts[0]#v}
-          minor=${parts[1]}
-          patch=${parts[2]}
+          IFS='.' read -r -a parts <<< "${{ steps.get_tag.outputs.tag }}"
+          major="${parts[0]#v}"
+          minor="${parts[1]}"
+          patch="${parts[2]}"
           new_patch=$((patch + 1))
           new_version="v$major.$minor.$new_patch"
-          echo "::set-output name=new_version::$new_version"
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
 
       - name: Download build artifacts
         uses: actions/download-artifact@v3
         with:
-          name: sr-sqs-${{ matrix.os }}.zip
+          path: artifacts
 
       - name: Upload Release Assets
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.12.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.increment_version.outputs.new_version }}
-          release_name: 'Release ${{ steps.increment_version.outputs.new_version }}'
-          assets: |
-            sr-sqs-ubuntu-latest.zip
-            sr-sqs-windows-latest.zip
+          releaseName: 'Release ${{ steps.increment_version.outputs.new_version }}'
+          artifacts: 'artifacts/*.zip'
