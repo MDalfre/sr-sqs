@@ -30,13 +30,13 @@ jobs:
       - name: Build Distributable
         run: ./gradlew createDistributable
 
-      - name: Zip Distributable Folder
-        run: |
-          if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            Compress-Archive -Path build\compose\binaries\main\app\* -DestinationPath sr-sqs-${{ matrix.os }}.zip
-          elif [[ "${RUNNER_OS}" == "Linux" ]]; then
-            zip -r sr-sqs-${{ matrix.os }}.zip build/compose/binaries/main/app
-          fi
+      - name: Zip Distributable Folder Linux
+        if: runner.os != 'Windows'
+        run: zip -r sr-sqs-${{ matrix.os }}.zip build/compose/binaries/main/app
+
+      - name: Zip Distributable Folder Windows
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path build\compose\binaries\main\app\* -DestinationPath sr-sqs-${{ matrix.os }}.zip
 
   upload-release:
     needs: build-and-release
