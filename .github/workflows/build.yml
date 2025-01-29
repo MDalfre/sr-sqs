@@ -32,7 +32,7 @@ jobs:
 
       - name: Zip Distributable Folder Linux
         if: runner.os != 'Windows'
-        run: zip -r sr-sqs-${{ runner.os }}.zip build/compose/binaries/main/app
+        run: cd build/compose/binaries/main/app && zip -r ../../../../../sr-sqs-${{ runner.os }}.zip ./* && cd ../../../../../
 
       - name: Zip Distributable Folder Windows
         if: runner.os == 'Windows'
