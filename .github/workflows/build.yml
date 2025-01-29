@@ -32,11 +32,11 @@ jobs:
 
       - name: Zip Distributable Folder Linux
         if: runner.os != 'Windows'
-        run: zip -r sr-sqs-${{ matrix.os }}.zip build/compose/binaries/main/app
+        run: zip -r sr-sqs-${{ runner.os }}.zip build/compose/binaries/main/app
 
       - name: Zip Distributable Folder Windows
         if: runner.os == 'Windows'
-        run: Compress-Archive -Path build\compose\binaries\main\app\* -DestinationPath sr-sqs-${{ matrix.os }}.zip
+        run: Compress-Archive -Path build\compose\binaries\main\app\* -DestinationPath sr-sqs-${{ runner.os }}.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
