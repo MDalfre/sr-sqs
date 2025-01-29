@@ -58,7 +58,7 @@ jobs:
           if git describe --tags --abbrev=0 2>/dev/null; then
             tag=$(git describe --tags --abbrev=0)
           else
-            tag="v3.1.1"
+            tag="v3.1.0"
           fi
           echo "tag=$tag" >> $GITHUB_OUTPUT
 
@@ -86,4 +86,4 @@ jobs:
           tag: ${{ steps.increment_version.outputs.new_version }}
           makeLatest: true
           name: 'Release ${{ steps.increment_version.outputs.new_version }}'
-          artifacts: "artifacts/sr-sqs-Linux.zip,artifacts/sr-sqs-Windows.zip"
+          artifacts: "artifacts/sr-sqs-Linux.zip/sr-sqs-Linux.zip,artifacts/sr-sqs-Windows.zip/sr-sqs-Windows.zip"
