@@ -9,7 +9,7 @@ jobs:
   build-and-release:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -31,8 +31,12 @@ jobs:
         run: ./gradlew createDistributable
 
       - name: Zip Distributable Folder Linux
-        if: runner.os != 'Windows'
-        run: cd build/compose/binaries/main/app && zip -r ../../../../../sr-sqs-${{ runner.os }}.zip ./* && cd ../../../../../
+        if: runner.os == 'Linux'
+        run: cd build/compose/binaries/main/app && zip -r ../../../../../sr-sqs-${{ runner.os }}.zip ./* && cd -
+
+      - name: Zip Distributable Folder MacOS
+        if: runner.os == 'macOS'
+        run: cd build/compose/binaries/main/app && zip -r ../../../../../sr-sqs-${{ runner.os }}.zip * && cd -
 
       - name: Zip Distributable Folder Windows
         if: runner.os == 'Windows'
@@ -55,11 +59,8 @@ jobs:
       - name: Get latest tag version
         id: get_tag
         run: |
-          if git tag --sort=-creatordate | head -n 1 2>/dev/null; then
-            tag=$(git tag --sort=-creatordate | head -n 1)
-          else
-            tag="v3.1.0"
-          fi
+          tag=$(git tag --sort=-creatordate | head -n 1)
+          echo "Found latest tag -> $tag"
           echo "tag=$tag" >> $GITHUB_OUTPUT
 
       - name: Increment version
@@ -71,6 +72,7 @@ jobs:
           patch="${parts[2]}"
           new_patch=$((patch + 1))
           new_version="v$major.$minor.$new_patch"
+          echo "New version -> $new_version"
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
 
       - name: Download build artifacts
@@ -86,4 +88,4 @@ jobs:
           tag: ${{ steps.increment_version.outputs.new_version }}
           makeLatest: true
           name: 'Release ${{ steps.increment_version.outputs.new_version }}'
-          artifacts: "artifacts/sr-sqs-Linux/sr-sqs-Linux.zip,artifacts/sr-sqs-Windows/sr-sqs-Windows.zip"
+          artifacts: "artifacts/sr-sqs-Linux/sr-sqs-Linux.zip,artifacts/sr-sqs-macOS/sr-sqs-macOS.zip,artifacts/sr-sqs-Windows/sr-sqs-Windows.zip"
