@@ -41,7 +41,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: sr-sqs-${{ runner.os }}.zip
+          name: sr-sqs-${{ runner.os }}
           path: sr-sqs-${{ runner.os }}.zip
 
   upload-release:
@@ -55,8 +55,8 @@ jobs:
       - name: Get latest tag version
         id: get_tag
         run: |
-          if git describe --tags --abbrev=0 2>/dev/null; then
-            tag=$(git describe --tags --abbrev=0)
+          if git tag --sort=-creatordate | head -n 1 2>/dev/null; then
+            tag=$(git tag --sort=-creatordate | head -n 1)
           else
             tag="v3.1.0"
           fi
@@ -86,4 +86,4 @@ jobs:
           tag: ${{ steps.increment_version.outputs.new_version }}
           makeLatest: true
           name: 'Release ${{ steps.increment_version.outputs.new_version }}'
-          artifacts: "artifacts/sr-sqs-Linux.zip/sr-sqs-Linux.zip,artifacts/sr-sqs-Windows.zip/sr-sqs-Windows.zip"
+          artifacts: "artifacts/sr-sqs-Linux/sr-sqs-Linux.zip,artifacts/sr-sqs-Windows/sr-sqs-Windows.zip"
