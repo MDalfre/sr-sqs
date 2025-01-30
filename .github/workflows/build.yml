@@ -58,15 +58,13 @@ jobs:
 
       - name: Get latest tag version
         id: get_tag
-        run: |
-          tag=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "Found latest tag -> $tag"
-          echo "tag=$tag" >> $GITHUB_OUTPUT
+        uses: JinoArch/get-latest-tag@latest
 
       - name: Increment version
         id: increment_version
         run: |
-          IFS='.' read -r -a parts <<< "${{ steps.get_tag.outputs.tag }}"
+          echo "Latest tag found -> ${{ steps.get_tag.outputs.latestTag }}"
+          IFS='.' read -r -a parts <<< "${{ steps.get_tag.outputs.latestTag }}"
           major="${parts[0]#v}"
           minor="${parts[1]}"
           patch="${parts[2]}"
