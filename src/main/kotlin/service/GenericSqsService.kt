@@ -4,11 +4,12 @@ import com.amazonaws.SdkClientException
 import com.amazonaws.services.sqs.model.AmazonSQSException
 import com.amazonaws.services.sqs.model.CreateQueueRequest
 import com.amazonaws.services.sqs.model.Message
+import com.amazonaws.services.sqs.model.PurgeQueueRequest
 import com.amazonaws.services.sqs.model.QueueAttributeName
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.SendMessageRequest
 import commons.Constants.DEFAULT_WAIT_INTERVAL
-import model.ProcessStatusEnum
+import model.ProcessingStatus
 import model.Queue
 
 
@@ -43,6 +44,7 @@ class GenericSqsService(
     }
 
     fun getQueues(log: Boolean = true): List<Queue> {
+        communicationService.gettingQueues = ProcessingStatus.STARTED
         val queueResponse: MutableList<Queue> = mutableListOf()
         try {
             if (log) {
@@ -57,12 +59,18 @@ class GenericSqsService(
                 )
             }
             if (log) communicationService.logSuccess("Queues loaded successfully")
+            communicationService.gettingQueues = ProcessingStatus.COMPLETED
             return queueResponse.sortedBy { it.name }
         } catch (ex: SdkClientException) {
             println(ex.message)
             communicationService.logError(ex.message)
             throw ex
         }
+    }
+
+    fun purgeQueue(queueUrl: String, queueName: String) {
+        communicationService.logWarn("Purging queue $queueName ...")
+        connectionService.sqs.purgeQueue(PurgeQueueRequest(queueUrl))
     }
 
     fun getQueueSize(queueUrl: String): Int {
@@ -108,7 +116,7 @@ class GenericSqsService(
 
     fun reprocessDlq(queueUrl: String, dlqUrl: String, delay: Long) {
         communicationService.logWarn("Reprocessing DQL")
-        communicationService.reprocessingDql = ProcessStatusEnum.STARTED
+        communicationService.reprocessingDql = ProcessingStatus.STARTED
         getQueueSize(dlqUrl)
         var counter = 0
         do {
@@ -121,7 +129,7 @@ class GenericSqsService(
             }
         } while (dlqMessages.size > 0)
         communicationService.messageCounter = 0
-        communicationService.reprocessingDql = ProcessStatusEnum.COMPLETED
+        communicationService.reprocessingDql = ProcessingStatus.COMPLETED
         communicationService.logSuccess("$counter messages reprocessed")
         communicationService.logSuccess("Reprocessing DLQ Finished !")
     }

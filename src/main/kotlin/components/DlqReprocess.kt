@@ -42,7 +42,7 @@ import commons.Util.toPercentage
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import model.ProcessStatusEnum
+import model.ProcessingStatus
 import model.Queue
 import service.CommunicationService
 import service.ConnectionService
@@ -81,7 +81,7 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
         ) { //SOURCE QUEUE
             Row {
                 if (!reprocessStart) {
-                    defaultTextField(
+                    DefaultTextField(
                         modifier =
                         Modifier.clickable {
                             queues = GenericSqsService(connectionService, communicationService).getQueues()
@@ -130,7 +130,7 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
             Row {//TARGET QUEUE
 
                 if (!reprocessStart) {
-                    defaultTextField(
+                    DefaultTextField(
                         modifier = Modifier.clickable {
                             queues = GenericSqsService(connectionService, communicationService).getQueues()
                             expandedTargetDropbox = !expandedTargetDropbox
@@ -259,11 +259,11 @@ fun dlqReprocess(connectionService: ConnectionService, communicationService: Com
         }
     }
 
-    if (communicationService.reprocessingDql == ProcessStatusEnum.COMPLETED) {
+    if (communicationService.reprocessingDql == ProcessingStatus.COMPLETED) {
         communicationService.messageCounter = 1
         completedMessage = "Reprocessing completed"
         reprocessStart = !reprocessStart
-        communicationService.reprocessingDql = ProcessStatusEnum.NOT_STARTED
+        communicationService.reprocessingDql = ProcessingStatus.NOT_STARTED
     }
 
     if (messageCounter != communicationService.messageCounter) {

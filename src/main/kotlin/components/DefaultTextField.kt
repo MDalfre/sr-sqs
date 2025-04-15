@@ -21,47 +21,53 @@ import commons.DefaultColors.secondaryColor
 
 @Composable
 @Suppress("LongParameterList")
-fun defaultTextField(
+fun DefaultTextField(
     modifier: Modifier = Modifier,
     text: String,
     value: String,
     onValueChange: (String) -> Unit,
     enabled: Boolean = true,
-    loading: Boolean = false
+    loading: Boolean = false,
+    maxWidth: Boolean = true
 ) {
-    Column(
-        modifier = Modifier.padding(top = 10.dp)
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(start = 3.dp),
-            style = TextStyle(fontSize = 13.sp),
-            color = secondaryColor
-        )
-        BasicTextField(
-            value = value,
-            enabled = enabled,
-            textStyle = TextStyle.Default.copy(color = Color.Gray),
-            cursorBrush = SolidColor(Color.Gray),
-            singleLine = false,
-            onValueChange = onValueChange,
-            decorationBox = { innerTextField ->
-                Column(
+
+    Text(
+        text = text,
+        modifier = Modifier.padding(start = 3.dp),
+        style = TextStyle(fontSize = 13.sp),
+        color = secondaryColor
+    )
+    BasicTextField(
+        value = value,
+        enabled = enabled,
+        textStyle = TextStyle.Default.copy(color = Color.Gray),
+        cursorBrush = SolidColor(Color.Gray),
+        singleLine = false,
+        onValueChange = onValueChange,
+        decorationBox = { innerTextField ->
+            Column(
+                if (maxWidth) {
                     modifier
-                        .fillMaxWidth()
                         .border(0.5.dp, color = secondaryColor, shape = RoundedCornerShape(5.dp))
                         .height(30.dp)
                         .padding(5.dp)
-                ) {
-                    if (loading) {
-                        LinearProgressIndicator(color = secondaryColor, modifier = Modifier.fillMaxSize())
-                    } else {
-                        innerTextField()
-                    }
+                        .fillMaxWidth()
+                } else {
+                    modifier
+                        .border(0.5.dp, color = secondaryColor, shape = RoundedCornerShape(5.dp))
+                        .height(30.dp)
+                        .padding(5.dp)
+                }
+            ) {
+                if (loading) {
+                    LinearProgressIndicator(color = secondaryColor, modifier = Modifier.fillMaxSize())
+                } else {
+                    innerTextField()
                 }
             }
-        )
-    }
+        }
+    )
+
 }
 
 @Composable

@@ -2,6 +2,7 @@ package commons
 
 object Constants {
     const val ZERO = 0
+    const val MATERIAL_ICON_DIMENSION = 24f
     const val DEFAULT_TIME_INTERVAL = 100f
     const val DEFAULT_LOADING_START = 0f
     const val DEFAULT_LOADING_RANGE_START = 100f

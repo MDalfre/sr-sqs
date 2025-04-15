@@ -19,15 +19,15 @@ import androidx.compose.ui.window.rememberWindowState
 import commons.DefaultColors
 import commons.DefaultColors.backgroundColor
 import commons.Util.appIcon
-import components.mainView
-import components.topBar
+import components.MainView
+import components.TopBar
 import model.ui.Theme
 import service.CommunicationService
 import service.ConnectionService
 import service.VariableStore
 
 const val DEFAULT_WIDTH = 1280
-const val DEFAULT_HEIGHT = 790
+const val DEFAULT_HEIGHT = 700
 val communicationService: CommunicationService = CommunicationService()
 var connectionService: ConnectionService? = null
 val variableStore = VariableStore()
@@ -46,10 +46,10 @@ fun app() {
         Row(
             Modifier.background(backgroundColor)
         ) {
-            mainView(communicationService, variableStore, theme)
+            MainView(theme)
         }
         Column {
-            topBar(communicationService, variableStore)
+            TopBar()
         }
     }
 }

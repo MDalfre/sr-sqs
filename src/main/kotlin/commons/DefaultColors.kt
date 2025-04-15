@@ -8,5 +8,6 @@ object DefaultColors {
     val secondaryColor = Color(0xFF424242)
     val tintColor = Color(0xFF64B5F6)
     val buttonColor = Color(0xFF757575)
+    val alertButtonColor = Color(0xffff6666)
     val dropDownColor = Color.Gray
 }

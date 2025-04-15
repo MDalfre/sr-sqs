@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.9.0"
-    id("org.jetbrains.compose") version "1.5.11"
+    id("org.jetbrains.compose") version "1.7.1"
     id("io.gitlab.arturbosch.detekt").version("1.18.0-RC3")
 }
 
@@ -17,6 +17,7 @@ version = lastAppVersion
 repositories {
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    google()
 }
 
 dependencies {
@@ -29,9 +30,6 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "11"
-}
-tasks.withType<Detekt>().configureEach {
-    jvmTarget = "1.8"
 }
 
 compose.desktop {

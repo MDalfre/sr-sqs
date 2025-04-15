@@ -11,50 +11,52 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import commons.DefaultColors
 import commons.DefaultColors.dropDownColor
+import commons.DefaultSizes.DEFAULT_PADDING_TOP
+import commons.DefaultSizes.LAZY_COLUM_SIZE
+import communicationService
 import connectionService
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import model.ProcessingStatus
 import model.ui.Theme
-import service.CommunicationService
 import service.FileHandleService
 import service.GenericSqsService
-import service.VariableStore
+import variableStore
 
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("LongMethod", "ComplexMethod")
 @Composable
-fun sendMessageFrom(
-    variableStore: VariableStore,
-    communicationService: CommunicationService,
-    theme: Theme
-) {
+fun SendMessageFrom(theme: Theme) {
     Column(
-        modifier = Modifier.width(450.dp).padding(top = 25.dp)
+        modifier = Modifier.width(450.dp).padding(top = DEFAULT_PADDING_TOP)
     ) {
+        DefaultTextField(
+            modifier = Modifier.clickable(enabled = communicationService.sqsConnected) {
+                if (connectionService != null) {
+                    variableStore.queues =
+                        GenericSqsService(connectionService!!, communicationService).getQueues(log = false)
+                }
+                variableStore.expandedToSend = !variableStore.expandedToSend
+            },
+            text = "Queues",
+            value = variableStore.selectedQueueToSend,
+            onValueChange = { variableStore.selectedQueueToSend = it },
+            loading = communicationService.gettingQueues == ProcessingStatus.STARTED && variableStore.connecting
+        )
         Row {
-            defaultTextField(
-                modifier = Modifier.clickable(enabled = communicationService.sqsConnected) {
-                    if (connectionService != null) {
-                        variableStore.queues =
-                            GenericSqsService(connectionService!!, communicationService).getQueues(log = false)
-                    }
-                    variableStore.expandedToSend = !variableStore.expandedToSend
-                },
-                text = "Queues",
-                value = variableStore.selectedQueueToSend,
-                onValueChange = { variableStore.selectedQueueToSend = it },
-                loading = variableStore.queues.isEmpty() && variableStore.connecting
-            )
             DropdownMenu(
                 modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp).background(dropDownColor),
                 expanded = variableStore.expandedToSend,
@@ -75,7 +77,7 @@ fun sendMessageFrom(
             }
         }
         defaultTextEditor(
-            modifier = Modifier.height(580.dp),
+            modifier = Modifier.height(LAZY_COLUM_SIZE),
             text = "Send Message",
             value = variableStore.message,
             onValueChange = { variableStore.message = it },
@@ -109,6 +111,24 @@ fun sendMessageFrom(
                 }
             ) {
                 Text("Import")
+            }
+            Button(
+                modifier = theme.buttonModifier,
+                enabled = variableStore.connecting && (variableStore.selectedQueueToSend != " "),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = DefaultColors.alertButtonColor,
+                    contentColor = Color.Black
+                ),
+                onClick = {
+                    GlobalScope.launch {
+                        GenericSqsService(connectionService!!, communicationService).purgeQueue(
+                            variableStore.selectedUrlToSend,
+                            variableStore.selectedQueueToSend
+                        )
+                    }
+                }
+            ) {
+                Text("Purge")
             }
         }
     }

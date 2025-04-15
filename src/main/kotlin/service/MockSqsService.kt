@@ -6,7 +6,7 @@ import commons.Constants.DEFAULT_WAIT_WILDCARD
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import model.ProcessStatusEnum
+import model.ProcessingStatus
 import model.SqsMock
 
 class MockSqsService(
@@ -19,7 +19,7 @@ class MockSqsService(
 
     @OptIn(DelicateCoroutinesApi::class)
     fun startMockService(mockList: List<SqsMock>) {
-        communicationService.mockService = ProcessStatusEnum.STARTED
+        communicationService.mockService = ProcessingStatus.STARTED
         mockList.forEach {
             GlobalScope.launch {
                 communicationService.logInfo("Starting mock for ${it.targetQueue.substringAfterLast("/")}")
@@ -30,7 +30,7 @@ class MockSqsService(
 
     fun stopMockService() {
         communicationService.logInfo("Stopping mock for all queues")
-        communicationService.mockService = ProcessStatusEnum.NOT_STARTED
+        communicationService.mockService = ProcessingStatus.NOT_STARTED
     }
 
     private tailrec fun mockQueue(sqsMock: SqsMock) {
@@ -43,7 +43,7 @@ class MockSqsService(
             }
         }
         Thread.sleep(DEFAULT_MOCK_INTERVAL)
-        if (communicationService.mockService == ProcessStatusEnum.STARTED) {
+        if (communicationService.mockService == ProcessingStatus.STARTED) {
             mockQueue(sqsMock)
         }
     }

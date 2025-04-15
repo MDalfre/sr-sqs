@@ -7,9 +7,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import commons.DefaultSizes.DEFAULT_PADDING_TOP
+import communicationService
 import model.ui.Theme
-import service.CommunicationService
-import service.VariableStore
+import variableStore
 
 const val ALERT_WIDTH = 700
 const val ALERT_HEIGHT = 500
@@ -17,25 +18,23 @@ const val ALERT_SMALL_HEIGHT = 250
 
 @Composable
 @Preview
-fun mainView(
-    communicationService: CommunicationService,
-    variableStore: VariableStore,
-    theme: Theme
-) {
-    Column(
-        modifier = Modifier
-            .padding(start = 16.dp, end = 16.dp, top = 25.dp)
-            .width(300.dp)
-    ) {
-        connectionForm(variableStore = variableStore, communicationService = communicationService, theme = theme)
-        mockModeSwitch(variableStore = variableStore)
-        systemLogPanel(communicationService = communicationService)
-    }
-
-    if (!variableStore.mockMode) {
-        sendMessageFrom(variableStore = variableStore, communicationService = communicationService, theme = theme)
-        receiveMessageForm(variableStore = variableStore, communicationService = communicationService, theme = theme)
+fun MainView(theme: Theme) {
+    if (!communicationService.sqsConnected && !variableStore.connecting) {
+        ConnectionForm(theme)
     } else {
-        mockMode(variableStore = variableStore, communicationService = communicationService, theme = theme)
+        Column(
+            modifier = Modifier
+                .padding(start = 16.dp, end = 16.dp, top = DEFAULT_PADDING_TOP)
+                .width(300.dp)
+        ) {
+            MockModeSwitch()
+            SystemLogPanel()
+        }
+        if (!variableStore.mockMode) {
+            SendMessageFrom(theme)
+            ReceiveMessageForm(theme)
+        } else {
+            MockMode(theme)
+        }
     }
 }

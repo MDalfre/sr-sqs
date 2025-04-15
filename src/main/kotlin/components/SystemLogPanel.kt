@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -25,14 +26,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import commons.DefaultColors
+import commons.DefaultSizes.LOG_COLUM_SIZE
 import commons.Util
+import communicationService
 import model.LogTypeEnum
-import service.CommunicationService
 
 @Composable
-fun systemLogPanel(
-    communicationService: CommunicationService
-) {
+fun SystemLogPanel() {
     val listStateLog = rememberLazyListState()
 
     Column(
@@ -47,9 +47,8 @@ fun systemLogPanel(
         LazyColumn(
             Modifier
                 .fillMaxWidth()
-                .height(250.dp)
-                .border(0.5.dp, color = DefaultColors.secondaryColor, shape = RoundedCornerShape(5.dp))
-                .height(30.dp),
+                .height(LOG_COLUM_SIZE)
+                .border(0.5.dp, color = DefaultColors.secondaryColor, shape = RoundedCornerShape(5.dp)),
             state = listStateLog,
         ) {
             items(communicationService.systemLog.asReversed()) { logMessage ->
@@ -71,12 +70,13 @@ fun systemLogPanel(
         }
         Row(
             Modifier.fillMaxWidth()
-                .align(Alignment.Start)
+                .align(Alignment.CenterHorizontally)
         ) {
             Image(
-                Util.appLogo(),
+                modifier = Modifier.size(200.dp),
+                painter = Util.appLogo(),
                 contentDescription = "SR SQS",
-                alignment = Alignment.BottomStart
+                alignment = Alignment.Center
             )
         }
     }

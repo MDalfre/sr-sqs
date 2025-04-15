@@ -9,13 +9,12 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogWindow
 import commons.DefaultColors.backgroundColor
 
 
 @Composable
-fun defaultDialog(
+fun DefaultDialog(
     title: String,
     body: String
 ) {

@@ -38,18 +38,18 @@ import androidx.compose.ui.unit.sp
 import commons.Constants
 import commons.DefaultColors
 import commons.DefaultColors.dropDownColor
+import communicationService
 import connectionService
 import model.SqsMock
 import model.ui.Theme
-import service.CommunicationService
 import service.FileHandleService
 import service.GenericSqsService
 import service.MockSqsService
-import service.VariableStore
+import variableStore
 
 @Suppress("LongMethod", "ComplexMethod")
 @Composable
-fun mockMode(variableStore: VariableStore, communicationService: CommunicationService, theme: Theme) {
+fun MockMode(theme: Theme) {
     val listStateMessages = rememberLazyListState()
 
     Column(
@@ -117,7 +117,7 @@ fun mockMode(variableStore: VariableStore, communicationService: CommunicationSe
                 modifier = Modifier.width(450.dp).padding(start = 16.dp, end = 16.dp, top = 10.dp)
             )
             {
-                defaultTextField(
+                DefaultTextField(
                     modifier = Modifier.clickable(enabled = communicationService.sqsConnected) {
                         if (connectionService != null) {
                             variableStore.queues = GenericSqsService(connectionService!!, communicationService)
@@ -152,7 +152,7 @@ fun mockMode(variableStore: VariableStore, communicationService: CommunicationSe
             Column(
                 modifier = Modifier.width(450.dp).padding(start = 16.dp, end = 16.dp, top = 10.dp)
             ) {
-                defaultTextField(
+                DefaultTextField(
                     modifier = Modifier.clickable(enabled = communicationService.sqsConnected) {
                         if (connectionService != null) {
                             variableStore.queues = GenericSqsService(connectionService!!, communicationService)

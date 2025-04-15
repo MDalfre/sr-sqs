@@ -5,14 +5,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import model.Log
 import model.LogTypeEnum
-import model.ProcessStatusEnum
+import model.ProcessingStatus
 
 class CommunicationService {
     var systemLog by mutableStateOf(listOf<Log>())
     var sqsConnected by mutableStateOf(false)
     var messageCounter = 1
-    var reprocessingDql = ProcessStatusEnum.NOT_STARTED
-    var mockService = ProcessStatusEnum.NOT_STARTED
+    var reprocessingDql = ProcessingStatus.NOT_STARTED
+    var mockService = ProcessingStatus.NOT_STARTED
+    var gettingQueues by mutableStateOf(ProcessingStatus.NOT_STARTED)
 
     fun logInfo(message: String) {
         systemLog = systemLog.plus(

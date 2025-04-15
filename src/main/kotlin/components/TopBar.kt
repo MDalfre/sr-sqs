@@ -27,19 +27,15 @@ import androidx.compose.ui.window.rememberDialogState
 import commons.DefaultColors
 import commons.DefaultColors.dropDownColor
 import commons.Util
+import communicationService
 import connectionService
-import service.CommunicationService
 import service.FileHandleService
 import service.GenericSqsService
-import service.VariableStore
+import variableStore
 
 @Suppress("LongMethod")
 @Composable
-fun topBar(communicationService: CommunicationService, variableStore: VariableStore) {
-
-//    var expanded by remember { mutableStateOf(false) }
-//    var reprocess by remember { mutableStateOf(false) }
-//    var createQueue by remember { mutableStateOf(false) }
+fun TopBar() {
 
     TopAppBar(
         modifier = Modifier.height(30.dp),

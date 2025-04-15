@@ -1,5 +1,5 @@
 package model
 
-enum class ProcessStatusEnum {
+enum class ProcessingStatus {
     NOT_STARTED,STARTED,COMPLETED
 }

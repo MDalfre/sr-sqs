@@ -42,22 +42,27 @@ import androidx.compose.ui.window.rememberDialogState
 import commons.Constants.DEFAULT_MAX_CHARACTER
 import commons.DefaultColors
 import commons.DefaultColors.dropDownColor
+import commons.DefaultSizes.DEFAULT_QUEUE_END
+import commons.DefaultSizes.DEFAULT_QUEUE_START
+import commons.DefaultSizes.DEFAULT_PADDING_TOP
+import commons.DefaultSizes.LAZY_COLUM_SIZE
 import commons.Util
 import commons.prettyJson
+import communicationService
 import connectionService
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import model.ProcessingStatus
 import model.ui.Theme
-import service.CommunicationService
 import service.FileHandleService
 import service.GenericSqsService
-import service.VariableStore
+import variableStore
 
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("LongMethod", "ComplexMethod")
 @Composable
-fun receiveMessageForm(variableStore: VariableStore, communicationService: CommunicationService, theme: Theme) {
+fun ReceiveMessageForm(theme: Theme) {
 
     val listStateMessages = rememberLazyListState()
     var showAlert by remember { mutableStateOf(false) }
@@ -65,22 +70,26 @@ fun receiveMessageForm(variableStore: VariableStore, communicationService: Commu
     var bodyAlert by remember { mutableStateOf(" ") }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 25.dp)
+        modifier = Modifier.fillMaxWidth().padding(
+            start = DEFAULT_QUEUE_START,
+            end = DEFAULT_QUEUE_END,
+            top = DEFAULT_PADDING_TOP
+        )
     ) {
+        DefaultTextField(
+            modifier = Modifier.clickable(enabled = communicationService.sqsConnected) {
+                if (connectionService != null) {
+                    variableStore.queues =
+                        GenericSqsService(connectionService!!, communicationService).getQueues(log = false)
+                }
+                variableStore.expandedToReceive = !variableStore.expandedToReceive
+            },
+            text = "Queues",
+            value = variableStore.selectedQueueToReceive,
+            onValueChange = { variableStore.selectedQueueToReceive = it },
+            loading = communicationService.gettingQueues == ProcessingStatus.STARTED && variableStore.connecting
+        )
         Row {
-            defaultTextField(
-                modifier = Modifier.clickable(enabled = communicationService.sqsConnected) {
-                    if (connectionService != null) {
-                        variableStore.queues =
-                            GenericSqsService(connectionService!!, communicationService).getQueues(log = false)
-                    }
-                    variableStore.expandedToReceive = !variableStore.expandedToReceive
-                },
-                text = "Queues",
-                value = variableStore.selectedQueueToReceive,
-                onValueChange = { variableStore.selectedQueueToReceive = it },
-                loading = variableStore.queues.isEmpty() && variableStore.connecting
-            )
             DropdownMenu(
                 modifier = Modifier.width(450.dp).heightIn(10.dp, 200.dp).background(dropDownColor),
                 expanded = variableStore.expandedToReceive,
@@ -112,7 +121,7 @@ fun receiveMessageForm(variableStore: VariableStore, communicationService: Commu
             LazyColumn(
                 Modifier
                     .fillMaxWidth()
-                    .height(580.dp)
+                    .height(LAZY_COLUM_SIZE)
                     .border(0.5.dp, color = DefaultColors.secondaryColor, shape = RoundedCornerShape(5.dp))
                     .height(30.dp),
                 state = listStateMessages
